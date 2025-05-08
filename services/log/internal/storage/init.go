@@ -7,9 +7,11 @@ import (
 
 	"github.com/gbh007/buttoners/services/log/internal/storage/migration"
 	"github.com/jmoiron/sqlx"
-	"github.com/pressly/goose/v3"
 	"github.com/uptrace/opentelemetry-go-extra/otelsqlx"
 
+	"github.com/golang-migrate/migrate/v4"
+	cii "github.com/golang-migrate/migrate/v4/database/clickhouse"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mailru/go-clickhouse/v2" // import sql driver
 )
 
@@ -27,17 +29,31 @@ func Init(ctx context.Context, username, password, dbHostWithPort, databaseName 
 		return nil, fmt.Errorf("%w: %w", errDatabase, err)
 	}
 
-	goose.SetBaseFS(migration.Migrations)
-
-	err = goose.SetDialect(string(goose.DialectClickHouse))
+	sourceInstance, err := iofs.New(migration.Migrations, ".")
 	if err != nil {
-		return nil, fmt.Errorf("%w: set dialect: %w", errDatabase, err)
+		return nil, fmt.Errorf("%w: open source: %w", errDatabase, err)
 	}
 
-	err = goose.UpContext(
-		ctx, db.DB, ".",
-		goose.WithNoColor(true),
+	dbInstance, err := cii.WithInstance(db.DB, &cii.Config{
+		DatabaseName:          databaseName,
+		MigrationsTable:       "my_migrations",
+		MigrationsTableEngine: "MergeTree",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w: open source: %w", errDatabase, err)
+	}
+
+	m, err := migrate.NewWithInstance(
+		"iofs",
+		sourceInstance,
+		"clickhouse",
+		dbInstance,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%w: new migrate: %w", errDatabase, err)
+	}
+
+	err = m.Up()
 	if err != nil {
 		return nil, fmt.Errorf("%w: up migrations: %w", errDatabase, err)
 	}

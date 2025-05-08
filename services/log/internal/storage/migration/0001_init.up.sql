@@ -1,6 +1,3 @@
--- +goose Up
-
--- Логи действий пользователя
 CREATE TABLE user_logs(
     request_id      String        NOT NULL,
     addr            String        NOT NULL,

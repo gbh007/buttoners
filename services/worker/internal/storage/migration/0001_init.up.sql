@@ -1,6 +1,3 @@
--- +goose Up
-
--- Результаты выполнения задач
 CREATE TABLE task_results(
     user_id         Int64         NOT NULL,
     chance          Int64         NOT NULL,
