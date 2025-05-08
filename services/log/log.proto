@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package log;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "services/log/internal/pb";
+
+service Log {
+  rpc Activity(ActivityRequest) returns (ActivityResponse) {}
+}
+
+
+message LogData {
+  int64 requestCount = 1;
+  google.protobuf.Timestamp lastRequest = 2;
+}
+
+message ActivityRequest {
+  int64 userID = 1;
+}
+
+message ActivityResponse {
+  LogData data = 1;
+}

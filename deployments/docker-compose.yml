@@ -1,0 +1,251 @@
+name: buttoners
+
+services:
+  gate:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/gate
+    restart: none
+    ports:
+      - 14281:14281
+    environment:
+      SELF_HOST: 0.0.0.0
+      SELF_PORT: 14281
+      KAFKA_NUM_PARTITIONS: 10
+    depends_on:
+      - auth
+      - kafka
+      - notification
+      - log
+      - redis
+      - pushgateway
+      - jaeger
+
+  auth:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/auth
+    restart: none
+    environment:
+      SELF_HOST: 0.0.0.0
+      DB_USER: auth_user
+      DB_PASS: auth_pwd
+      DB_ADDR: mariadb:3306
+      DB_NAME: auth_db
+    depends_on:
+      - mariadb
+      - redis
+      - pushgateway
+      - jaeger
+
+  handler:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/handler
+    restart: none
+    environment:
+      KAFKA_GROUP_ID: handler
+      RABBIT_MQ_USER: task
+      RABBIT_MQ_PASS: task_pwd
+    deploy:
+      mode: replicated
+      replicas: 3
+    depends_on:
+      - kafka
+      - rabbitmq
+      - pushgateway
+      - jaeger
+
+  log:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/log
+    restart: none
+    environment:
+      KAFKA_GROUP_ID: log
+      DB_USER: log_user
+      DB_PASS: log_pwd
+      DB_ADDR: clickhouse:8123
+      DB_NAME: log_db
+      SELF_HOST: 0.0.0.0
+    deploy:
+      mode: replicated
+      replicas: 3
+    depends_on:
+      - kafka
+      - clickhouse
+      - pushgateway
+      - jaeger
+
+  worker:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/worker
+    restart: none
+    environment:
+      RABBIT_MQ_USER: task
+      RABBIT_MQ_PASS: task_pwd
+      DB_USER: task_user
+      DB_PASS: task_pwd
+      DB_ADDR: clickhouse:8123
+      DB_NAME: task_db
+    deploy:
+      mode: replicated
+      replicas: 2
+    depends_on:
+      - rabbitmq
+      - notification
+      - clickhouse
+      - pushgateway
+      - jaeger
+
+  notification:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/notification
+    restart: none
+    environment:
+      SELF_HOST: 0.0.0.0
+      DB_USER: notification_user
+      DB_PASS: notification_pwd
+      DB_ADDR: mariadb:3306
+      DB_NAME: notification_db
+    deploy:
+      mode: replicated
+      replicas: 2
+    depends_on:
+      - mariadb
+      - pushgateway
+      - jaeger
+
+  # testbot:
+  #   build:
+  #     context: ..
+  #     dockerfile: ./deployments/Dockerfile
+  #     args:
+  #       BINARY_PATH: ./bin/build/testbot
+  #   restart: none
+  #   environment:
+  #     BOT_USER_COUNT: 100
+  #     BOT_MAX_PAUSE: 3
+  #   depends_on:
+  #     - gate
+
+  mariadb:
+    image: mariadb:11
+    restart: none
+    command: "--init-file /init.sql"
+    environment:
+      MARIADB_ROOT_PASSWORD: 12345
+    volumes:
+      - mariadb:/var/lib/mysql
+      - ./maria-db-dev-init.sql:/init.sql
+    ports:
+      - 13306:3306
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    restart: none
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-secrets:/etc/zookeeper/secrets
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    restart: none
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka-secrets:/etc/kafka/secrets
+      - kafka-data:/var/lib/kafka/data
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:22.2
+    restart: none
+    environment:
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: 123
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_UID: 0
+      CLICKHOUSE_GID: 0
+    volumes:
+      - clickhouse-log:/var/log/clickhouse-server
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 18123:8123
+
+  rabbitmq:
+    image: rabbitmq:3.12
+    restart: none
+    environment:
+      RABBITMQ_DEFAULT_USER: task
+      RABBITMQ_DEFAULT_PASS: task_pwd
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:7.2
+    restart: none
+    volumes:
+      - redis-data:/data
+
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    restart: none
+    volumes:
+      - ./prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-console:/usr/share/prometheus/consoles/custom
+      - prometheus-data:/prometheus
+    ports:
+      - 19090:9090
+    depends_on:
+      - pushgateway
+
+  pushgateway:
+    image: prom/pushgateway:v1.6.0
+    restart: none
+  
+
+  jaeger:
+    image: jaegertracing/all-in-one
+    restart: none
+    ports:
+      - 16686:16686
+
+volumes:
+  mariadb:
+  kafka-secrets:
+  kafka-data:
+  zookeeper-secrets:
+  zookeeper-data:
+  zookeeper-log:
+  clickhouse-data:
+  clickhouse-log:
+  rabbitmq-data:
+  redis-data:
+  prometheus-data:

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package notification;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "services/notification/internal/pb";
+
+service Notification {
+  rpc New(NewRequest) returns (NewResponse) {}
+  rpc List(ListRequest) returns (ListResponse) {}
+  rpc Read(ReadRequest) returns (ReadResponse) {}
+  rpc ReadAll(ReadAllRequest) returns (ReadAllResponse) {}
+}
+
+
+message NotificationData {
+  string kind = 1;
+  string level = 2;
+  string title = 3;
+  string body = 4;
+  int64 id = 5;
+  google.protobuf.Timestamp created = 6;
+}
+
+message NewRequest {
+  int64 userID = 1;
+  NotificationData data = 2;
+}
+
+message NewResponse {}
+
+message ListRequest {
+  int64 userID = 1;
+}
+
+message ListResponse {
+  repeated NotificationData list = 1;
+}
+
+message ReadRequest {
+  int64 id = 1;
+}
+
+message ReadResponse {}
+
+message ReadAllRequest {
+  int64 userID = 1;
+}
+
+message ReadAllResponse {}

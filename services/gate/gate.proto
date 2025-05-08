@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package gate;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "services/gate/internal/pb";
+
+service Gate {
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc Button(ButtonRequest) returns (ButtonResponse) {}
+}
+
+service Notification {
+  rpc List(NotificationListRequest) returns (NotificationListResponse) {}
+  rpc Read(NotificationReadRequest) returns (NotificationReadResponse) {}
+}
+
+service Log {
+  rpc Activity(ActivityRequest) returns (ActivityResponse) {}
+}
+
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message RegisterRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message RegisterResponse {}
+
+
+message ButtonRequest {
+  int64 duration = 1;
+  int64 chance = 2;
+}
+
+message ButtonResponse {}
+
+message NotificationData {
+  string kind = 1;
+  string level = 2;
+  string title = 3;
+  string body = 4;
+  int64 id = 5;
+  google.protobuf.Timestamp created = 6;
+}
+
+message NotificationListRequest {}
+
+message NotificationListResponse {
+  repeated NotificationData list = 1;
+}
+
+message NotificationReadRequest {
+  int64 id = 1;
+  bool all = 2;
+}
+
+message NotificationReadResponse {}
+
+message ActivityRequest {}
+
+message ActivityResponse {
+  int64 requestCount = 1;
+  google.protobuf.Timestamp lastRequest = 2;
+}

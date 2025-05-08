@@ -1,0 +1,9 @@
+CREATE USER IF NOT EXISTS log_user IDENTIFIED BY 'log_pwd';
+
+CREATE DATABASE IF NOT EXISTS log_db;
+GRANT ALL ON log_db.* TO log_user;
+
+CREATE USER IF NOT EXISTS task_user IDENTIFIED BY 'task_pwd';
+
+CREATE DATABASE IF NOT EXISTS task_db;
+GRANT ALL ON task_db.* TO task_user;
