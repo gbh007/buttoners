@@ -1,5 +1,7 @@
 package server
 
+import "github.com/gbh007/buttoners/core/config"
+
 type KafkaConfig struct {
 	TaskTopic     string
 	LogTopic      string
@@ -10,7 +12,7 @@ type KafkaConfig struct {
 
 type Config struct {
 	SelfAddress         string
-	AuthAddress         string
+	AuthService         config.Service
 	LogAddress          string
 	NotificationAddress string
 	RedisAddress        string

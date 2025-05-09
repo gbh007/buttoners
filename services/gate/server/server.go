@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	authClient "github.com/gbh007/buttoners/services/auth/client"
 	logClient "github.com/gbh007/buttoners/services/log/client"
 	notificationClient "github.com/gbh007/buttoners/services/notification/client"
 
+	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/redis"
 	"github.com/gbh007/buttoners/services/gate/dto"
@@ -23,7 +23,7 @@ type pbServer struct {
 	pb.UnimplementedNotificationServer
 	pb.UnimplementedLogServer
 
-	auth         *authClient.Client
+	auth         *authclient.Client
 	notification *notificationClient.Client
 	log          *logClient.Client
 	kafkaTask    *kafka.Client
@@ -32,13 +32,13 @@ type pbServer struct {
 }
 
 func (s *pbServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	token, err := s.auth.Login(ctx, req.GetLogin(), req.GetPassword())
+	resp, err := s.auth.Login(ctx, req.GetLogin(), req.GetPassword())
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.LoginResponse{
-		Token: token,
+		Token: resp.Token,
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func (s *pbServer) Button(ctx context.Context, req *pb.ButtonRequest) (*pb.Butto
 	}
 
 	kafkaData := dto.KafkaTaskData{
-		UserID:   info.ID,
+		UserID:   info.UserID,
 		Chance:   req.GetChance(),
 		Duration: req.GetDuration(),
 	}
@@ -85,7 +85,7 @@ func (s *pbServer) List(ctx context.Context, _ *pb.NotificationListRequest) (*pb
 		return nil, err
 	}
 
-	rawNotifications, err := s.notification.List(ctx, info.ID)
+	rawNotifications, err := s.notification.List(ctx, info.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (s *pbServer) Read(ctx context.Context, req *pb.NotificationReadRequest) (*
 	}
 
 	if req.GetAll() {
-		err = s.notification.ReadAll(ctx, info.ID)
+		err = s.notification.ReadAll(ctx, info.UserID)
 	} else {
 		// FIXME: уязвимость пользователь может отметить не свое уведомление
 		err = s.notification.Read(ctx, req.GetId())
@@ -133,7 +133,7 @@ func (s *pbServer) Activity(ctx context.Context, _ *pb.ActivityRequest) (*pb.Act
 		return nil, err
 	}
 
-	data, err := s.log.Activity(ctx, info.ID)
+	data, err := s.log.Activity(ctx, info.UserID)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func unmarshal[T any](r io.Reader) (T, error) {
 	return v, nil
 }
 
-func request[RQ, RP any](ctx context.Context, c *Client,path string, reqV RQ) (RP, error) {
+func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (RP, error) {
 	var empty RP
 
 	data, err := marshal(reqV)
@@ -44,7 +44,7 @@ func request[RQ, RP any](ctx context.Context, c *Client,path string, reqV RQ) (R
 
 	request.Header.Set("Authorization", c.token)
 	request.Header.Set("X-Client-Name", c.name)
-	request.Header.Set("Content-type", "application/json; charset=utf-8")
+	request.Header.Set("Content-Type", ContentType)
 
 	resp, err := c.client.Do(request)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 type Config struct {
 	Self             config.Addr
 	Kafka            config.Kafka
-	AuthAddr         string `envconfig:"default=auth:50051"`
+	AuthService      config.Service
 	NotificationAddr string `envconfig:"default=notification:50051"`
 	LogAddr          string `envconfig:"default=log:50051"`
 	RedisAddr        string `envconfig:"default=redis:6379"`
@@ -54,7 +54,7 @@ func main() {
 		ctx,
 		server.Config{
 			SelfAddress:         cfg.Self.Full(),
-			AuthAddress:         cfg.AuthAddr,
+			AuthService:         cfg.AuthService,
 			LogAddress:          cfg.LogAddr,
 			NotificationAddress: cfg.NotificationAddr,
 			RedisAddress:        cfg.RedisAddr,

@@ -22,6 +22,8 @@ github.com/gbh007/buttoners/core v0.0.0-20250508141616-821618a58fde h1:sVo2QAEOr
 github.com/gbh007/buttoners/core v0.0.0-20250508141616-821618a58fde/go.mod h1:uwRsW6nU+bXu85KXce4vocFIkjVrbZ6LzDkja0Q1d7Q=
 github.com/gbh007/buttoners/services/gate v0.0.0-20250508141616-821618a58fde h1:jJsrcGWkNil1zT/VWNDjEf6/aXbkgGb+p+G9YC6EDDM=
 github.com/gbh007/buttoners/services/gate v0.0.0-20250508141616-821618a58fde/go.mod h1:ZqwCJ4zRTyYtzYfIQ8HD3lYRGtRd9626boiYuzyuqW0=
+github.com/go-chi/chi/v5 v5.2.1 h1:KOIHODQj58PmL80G2Eak4WdvUzjSJSm0vG72crDCqb8=
+github.com/go-chi/chi/v5 v5.2.1/go.mod h1:L2yAIGWB3H+phAw1NxKwWM+7eUH/lU8pOMm5hHcoops=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
 github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=

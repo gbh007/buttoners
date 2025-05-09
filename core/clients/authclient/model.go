@@ -1,5 +1,13 @@
 package authclient
 
+const (
+	ContentType  = "application/json; charset=utf-8"
+	LoginPath    = "/api/v1/login"
+	LogoutPath   = "/api/v1/logout"
+	RegisterPath = "/api/v1/register"
+	InfoPath     = "/api/v1/info"
+)
+
 // /api/v1/login
 
 type LoginRequest struct {

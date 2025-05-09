@@ -18,7 +18,7 @@ type Database struct {
 	db *sqlx.DB
 }
 
-func Init(ctx context.Context, username, password, dbHostWithPort, databaseName string) (*Database, error) {
+func New(ctx context.Context, username, password, dbHostWithPort, databaseName string) (*Database, error) {
 	cs := fmt.Sprintf(
 		"%s:%s@tcp(%s)/%s?parseTime=true&multiStatements=true",
 		username, password, dbHostWithPort, databaseName,

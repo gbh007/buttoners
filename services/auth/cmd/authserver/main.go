@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Self           config.Addr
+	Self           config.Service
 	DB             config.Database
 	RedisAddr      string `envconfig:"default=redis:6379"`
 	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
@@ -49,7 +49,8 @@ func main() {
 
 	err = server.Run(ctx,
 		server.CommunicationConfig{
-			SelfAddress:       cfg.Self.Full(),
+			SelfAddress:       cfg.Self.Addr,
+			SelfToken:         cfg.Self.Token,
 			RedisAddress:      cfg.RedisAddr,
 			PrometheusAddress: cfg.PrometheusAddr,
 		},

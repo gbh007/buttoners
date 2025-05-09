@@ -39,7 +39,7 @@ func (c *Client) Login(ctx context.Context, login, pass string) (LoginResponse, 
 	v, err := request[LoginRequest, LoginResponse](
 		ctx,
 		c,
-		"/api/v1/login",
+		LoginPath,
 		LoginRequest{
 			Login:    login,
 			Password: pass,
@@ -56,7 +56,7 @@ func (c *Client) Logout(ctx context.Context, token string) error {
 	_, err := request[LogoutRequest, struct{}](
 		ctx,
 		c,
-		"/api/v1/logout",
+		LogoutPath,
 		LogoutRequest{
 			Token: token,
 		},
@@ -72,7 +72,7 @@ func (c *Client) Register(ctx context.Context, login, pass string) error {
 	_, err := request[RegisterRequest, struct{}](
 		ctx,
 		c,
-		"/api/v1/register",
+		RegisterPath,
 		RegisterRequest{
 			Login:    login,
 			Password: pass,
@@ -89,7 +89,7 @@ func (c *Client) Info(ctx context.Context, token string) (InfoResponse, error) {
 	v, err := request[InfoRequest, InfoResponse](
 		ctx,
 		c,
-		"/api/v1/info",
+		InfoPath,
 		InfoRequest{
 			Token: token,
 		},

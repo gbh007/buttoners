@@ -4,10 +4,10 @@ import (
 	"context"
 	"net"
 
-	authClient "github.com/gbh007/buttoners/services/auth/client"
 	logClient "github.com/gbh007/buttoners/services/log/client"
 	notificationClient "github.com/gbh007/buttoners/services/notification/client"
 
+	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/redis"
@@ -20,7 +20,7 @@ import (
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
-	authClient, err := authClient.New(cfg.AuthAddress)
+	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, "gate-service")
 	if err != nil {
 		return err
 	}

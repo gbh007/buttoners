@@ -36,3 +36,8 @@ type RabbitMQ struct {
 type Jaeger struct {
 	URL string `envconfig:"default=http://jaeger:14268/api/traces"`
 }
+
+type Service struct {
+	Addr  string
+	Token string
+}

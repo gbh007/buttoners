@@ -65,7 +65,7 @@ func (s *pbServer) logInterceptor(
 			log.Println(err)
 		} else {
 			ctx = context.WithValue(ctx, userInfoKey, userInfo)
-			kafkaData.UserID = userInfo.ID
+			kafkaData.UserID = userInfo.UserID
 		}
 	}
 

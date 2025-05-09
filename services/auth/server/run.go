@@ -2,15 +2,17 @@ package server
 
 import (
 	"context"
-	"net"
+	"net/http"
+	"time"
 
+	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/redis"
-	"github.com/gbh007/buttoners/services/auth/internal/pb"
 	"github.com/gbh007/buttoners/services/auth/internal/storage"
 	"github.com/gbh007/buttoners/services/gate/dto"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"google.golang.org/grpc"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type DBConfig struct {
@@ -19,6 +21,7 @@ type DBConfig struct {
 
 type CommunicationConfig struct {
 	SelfAddress       string
+	SelfToken         string
 	RedisAddress      string
 	PrometheusAddress string
 }
@@ -35,12 +38,7 @@ func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 
 	defer redisClient.Close()
 
-	lis, err := net.Listen("tcp", comCfg.SelfAddress)
-	if err != nil {
-		return err
-	}
-
-	db, err := storage.Init(ctx, cfg.Username, cfg.Password, cfg.Addr, cfg.DatabaseName)
+	db, err := storage.New(ctx, cfg.Username, cfg.Password, cfg.Addr, cfg.DatabaseName)
 	if err != nil {
 		return err
 	}
@@ -48,20 +46,32 @@ func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 	s := &authServer{
 		db:    db,
 		redis: redisClient,
+		token: comCfg.SelfToken,
 	}
 
-	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(logInterceptor),
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	router := chi.NewRouter()
+	router.Use(
+		middleware.Logger,
+		s.authMiddleWare,
 	)
-	pb.RegisterAuthServer(grpcServer, s)
+
+	router.Post(authclient.LoginPath, s.Login)
+	router.Post(authclient.LogoutPath, s.Logout)
+	router.Post(authclient.RegisterPath, s.Register)
+	router.Post(authclient.InfoPath, s.Info)
+
+	server := &http.Server{
+		Addr:    comCfg.SelfAddress,
+		Handler: otelhttp.NewHandler(router, "Auth server"),
+	}
 
 	go func() {
 		<-ctx.Done()
-		grpcServer.GracefulStop()
+		sCtx, _ := context.WithTimeout(context.Background(), time.Second*10)
+		server.Shutdown(sCtx)
 	}()
 
-	err = grpcServer.Serve(lis)
+	err = server.ListenAndServe()
 	if err != nil {
 		return err
 	}

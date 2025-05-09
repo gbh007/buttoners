@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/gbh007/buttoners/services/auth/client"
+	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/services/gate/dto"
 )
 
@@ -14,8 +14,8 @@ const cacheTTL = time.Minute * 5
 
 var errUnauthorized = errors.New("unauthorized")
 
-func (s *pbServer) authInfo(ctx context.Context) (*client.UserInfo, error) {
-	info, ok := ctx.Value(userInfoKey).(*client.UserInfo)
+func (s *pbServer) authInfo(ctx context.Context) (*authclient.InfoResponse, error) {
+	info, ok := ctx.Value(userInfoKey).(*authclient.InfoResponse)
 	if !ok {
 		return nil, errUnauthorized
 	}
@@ -23,7 +23,7 @@ func (s *pbServer) authInfo(ctx context.Context) (*client.UserInfo, error) {
 	return info, nil
 }
 
-func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*client.UserInfo, error) {
+func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*authclient.InfoResponse, error) {
 	redisStart := time.Now()
 
 	redisData, err := s.redis.Get(ctx, token)
@@ -35,9 +35,8 @@ func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*client.UserI
 		// Ошибка отсутствия значения также логируется для отладки
 		log.Printf("%s error from redis: %s\n", token, err.Error())
 	} else {
-		return &client.UserInfo{
-			ID:    redisData.ID,
-			Token: token,
+		return &authclient.InfoResponse{
+			UserID: redisData.ID,
 		}, nil
 	}
 
@@ -53,10 +52,10 @@ func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*client.UserI
 	}
 
 	// В данном случае кешер сеттится специально здесь, а не в сервисе авторизации
-	err = s.redis.Set(ctx, token, dto.UserInfo{ID: info.ID}, cacheTTL)
+	err = s.redis.Set(ctx, token, dto.UserInfo{ID: info.UserID}, cacheTTL)
 	if err != nil {
 		log.Println(err)
 	}
 
-	return info, nil
+	return &info, nil
 }
