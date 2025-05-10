@@ -20,10 +20,10 @@ func marshal[T any](w io.Writer, v T) error {
 	return nil
 }
 
-func unmarshal[T any](r io.Reader) (T, error) {
+func unmarshal[T any](data []byte) (T, error) {
 	var v T
 
-	err := json.NewDecoder(r).Decode(&v)
+	err := json.Unmarshal(data, &v)
 	if err != nil {
 		return v, err
 	}
@@ -64,7 +64,7 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 	}
 
 	if resp.StatusCode() == http.StatusOK {
-		v, err := unmarshal[RP](resp.BodyStream())
+		v, err := unmarshal[RP](resp.Body())
 		if err != nil {
 			return empty, fmt.Errorf("%w: unmarshal: %w", ErrProcess, err)
 		}
@@ -72,7 +72,7 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 		return v, nil
 	}
 
-	v, err := unmarshal[ErrorResponse](resp.BodyStream())
+	v, err := unmarshal[ErrorResponse](resp.Body())
 	if err != nil {
 		return empty, fmt.Errorf("%w: unmarshal: %w", ErrProcess, err)
 	}
