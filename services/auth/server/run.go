@@ -43,7 +43,7 @@ func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 		return err
 	}
 
-	s := &authServer{
+	s := &server{
 		db:    db,
 		redis: redisClient,
 		token: comCfg.SelfToken,

@@ -6,7 +6,7 @@ import (
 	"github.com/gbh007/buttoners/core/clients/authclient"
 )
 
-func (s *authServer) authMiddleWare(next http.Handler) http.Handler {
+func (s *server) authMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {

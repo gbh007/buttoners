@@ -2,13 +2,11 @@ package server
 
 import (
 	"context"
-	"net"
+	"time"
 
 	"github.com/gbh007/buttoners/core/metrics"
-	"github.com/gbh007/buttoners/services/notification/internal/pb"
 	"github.com/gbh007/buttoners/services/notification/internal/storage"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"google.golang.org/grpc"
+	"github.com/valyala/fasthttp"
 )
 
 type DBConfig struct {
@@ -17,6 +15,7 @@ type DBConfig struct {
 
 type Config struct {
 	SelfAddress       string
+	SelfToken         string
 	PrometheusAddress string
 	DB                DBConfig
 }
@@ -24,32 +23,27 @@ type Config struct {
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
-	lis, err := net.Listen("tcp", cfg.SelfAddress)
-	if err != nil {
-		return err
-	}
-
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
 	}
 
-	s := &pbServer{
-		db: db,
+	s := &server{
+		db:    db,
+		token: cfg.SelfToken,
 	}
-
-	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(logInterceptor),
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
-	pb.RegisterNotificationServer(grpcServer, s)
+	// FIXME: добавить логирование и авторизацию
+	server := &fasthttp.Server{
+		Handler: s.handle,
+	}
 
 	go func() {
 		<-ctx.Done()
-		grpcServer.GracefulStop()
+		sCtx, _ := context.WithTimeout(context.Background(), time.Second*10)
+		server.ShutdownWithContext(sCtx)
 	}()
 
-	err = grpcServer.Serve(lis)
+	err = server.ListenAndServe(cfg.SelfAddress)
 	if err != nil {
 		return err
 	}

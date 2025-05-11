@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
-	notificationServerClient "github.com/gbh007/buttoners/services/notification/client"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
 	"go.opentelemetry.io/otel"
@@ -32,7 +32,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer rabbitClient.Close()
 
-	notificationClient, err := notificationServerClient.New(cfg.NotificationAddress)
+	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, "worker-service")
 	if err != nil {
 		return err
 	}

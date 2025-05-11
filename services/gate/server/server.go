@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	logClient "github.com/gbh007/buttoners/services/log/client"
-	notificationClient "github.com/gbh007/buttoners/services/notification/client"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/redis"
 	"github.com/gbh007/buttoners/services/gate/dto"
@@ -24,7 +24,7 @@ type pbServer struct {
 	pb.UnimplementedLogServer
 
 	auth         *authclient.Client
-	notification *notificationClient.Client
+	notification *notificationclient.Client
 	log          *logClient.Client
 	kafkaTask    *kafka.Client
 	kafkaLog     *kafka.Client
@@ -90,8 +90,8 @@ func (s *pbServer) List(ctx context.Context, _ *pb.NotificationListRequest) (*pb
 		return nil, err
 	}
 
-	notifications := make([]*pb.NotificationData, len(rawNotifications))
-	for index, raw := range rawNotifications {
+	notifications := make([]*pb.NotificationData, len(rawNotifications.Notifications))
+	for index, raw := range rawNotifications.Notifications {
 		notifications[index] = &pb.NotificationData{
 			Kind:    raw.Kind,
 			Level:   raw.Level,
@@ -114,10 +114,9 @@ func (s *pbServer) Read(ctx context.Context, req *pb.NotificationReadRequest) (*
 	}
 
 	if req.GetAll() {
-		err = s.notification.ReadAll(ctx, info.UserID)
+		err = s.notification.Read(ctx, info.UserID, 0)
 	} else {
-		// FIXME: уязвимость пользователь может отметить не свое уведомление
-		err = s.notification.Read(ctx, req.GetId())
+		err = s.notification.Read(ctx, info.UserID, req.GetId())
 	}
 
 	if err != nil {

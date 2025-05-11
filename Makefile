@@ -3,8 +3,6 @@ BUILD_ENV = GOOS=linux GOARCH=amd64 CGO_ENABLED=0
 .PHONY: proto
 proto:
 	protoc -I=. --go_out=. --go-grpc_out=. services/gate/gate.proto
-	protoc -I=. --go_out=. --go-grpc_out=. services/auth/auth.proto
-	protoc -I=. --go_out=. --go-grpc_out=. services/notification/notification.proto
 	protoc -I=. --go_out=. --go-grpc_out=. services/log/log.proto
 
 .PHONY: install-proto

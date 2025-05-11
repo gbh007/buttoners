@@ -14,7 +14,7 @@ type Config struct {
 	SelfAddress         string
 	AuthService         config.Service
 	LogAddress          string
-	NotificationAddress string
+	NotificationService config.Service
 	RedisAddress        string
 	PrometheusAddress   string
 	Kafka               KafkaConfig

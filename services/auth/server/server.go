@@ -9,7 +9,7 @@ import (
 	"github.com/gbh007/buttoners/services/gate/dto"
 )
 
-type authServer struct {
+type server struct {
 	db    *storage.Database
 	redis *redis.Client[dto.UserInfo]
 	token string

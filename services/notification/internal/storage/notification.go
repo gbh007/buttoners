@@ -63,8 +63,8 @@ func (d *Database) GetNotificationsByUserID(ctx context.Context, userID int64) (
 	return users, nil
 }
 
-func (d *Database) MarkReadByID(ctx context.Context, id int64) error {
-	_, err := d.db.ExecContext(ctx, "UPDATE notifications SET `read` = TRUE WHERE id = ?;", id)
+func (d *Database) MarkReadByID(ctx context.Context, userID, id int64) error {
+	_, err := d.db.ExecContext(ctx, "UPDATE notifications SET `read` = TRUE WHERE user_id = ? AND id = ?;", userID, id)
 	if err != nil {
 		return fmt.Errorf("%w: %w", errDatabase, err)
 	}

@@ -5,9 +5,9 @@ import (
 	"net"
 
 	logClient "github.com/gbh007/buttoners/services/log/client"
-	notificationClient "github.com/gbh007/buttoners/services/notification/client"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/redis"
@@ -36,7 +36,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer redisClient.Close()
 
-	notificationClient, err := notificationClient.New(cfg.NotificationAddress)
+	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, "gate-service")
 	if err != nil {
 		return err
 	}

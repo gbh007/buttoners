@@ -16,6 +16,8 @@ services:
       KAFKA_NUM_PARTITIONS: 10
       AUTH_SERVICE_ADDR: http://auth:8080
       AUTH_SERVICE_TOKEN: auth-service-secret
+      NOTIFICATION_SERVICE_ADDR: http://notification:8080
+      NOTIFICATION_SERVICE_TOKEN: notification-service-secret
     depends_on:
       - auth
       - kafka
@@ -102,6 +104,8 @@ services:
       DB_PASS: task_pwd
       DB_ADDR: clickhouse:8123
       DB_NAME: task_db
+      NOTIFICATION_SERVICE_ADDR: http://notification:8080
+      NOTIFICATION_SERVICE_TOKEN: notification-service-secret
     deploy:
       mode: replicated
       replicas: 2
@@ -120,7 +124,8 @@ services:
         BINARY_PATH: ./bin/build/notification
     restart: none
     environment:
-      SELF_HOST: 0.0.0.0
+      SELF_ADDR: :8080
+      SELF_TOKEN: notification-service-secret
       DB_USER: notification_user
       DB_PASS: notification_pwd
       DB_ADDR: mariadb:3306
@@ -132,19 +137,6 @@ services:
       - mariadb
       - pushgateway
       - jaeger
-
-  # testbot:
-  #   build:
-  #     context: ..
-  #     dockerfile: ./deployments/Dockerfile
-  #     args:
-  #       BINARY_PATH: ./bin/build/testbot
-  #   restart: none
-  #   environment:
-  #     BOT_USER_COUNT: 100
-  #     BOT_MAX_PAUSE: 3
-  #   depends_on:
-  #     - gate
 
   mariadb:
     image: mariadb:11
@@ -232,7 +224,6 @@ services:
   pushgateway:
     image: prom/pushgateway:v1.6.0
     restart: none
-  
 
   jaeger:
     image: jaegertracing/all-in-one

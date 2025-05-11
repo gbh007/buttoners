@@ -14,14 +14,14 @@ import (
 )
 
 type Config struct {
-	Self             config.Addr
-	Kafka            config.Kafka
-	AuthService      config.Service
-	NotificationAddr string `envconfig:"default=notification:50051"`
-	LogAddr          string `envconfig:"default=log:50051"`
-	RedisAddr        string `envconfig:"default=redis:6379"`
-	PrometheusAddr   string `envconfig:"default=pushgateway:9091"`
-	Jaeger           config.Jaeger
+	Self                config.Addr
+	Kafka               config.Kafka
+	AuthService         config.Service
+	NotificationService config.Service
+	LogAddr             string `envconfig:"default=log:50051"`
+	RedisAddr           string `envconfig:"default=redis:6379"`
+	PrometheusAddr      string `envconfig:"default=pushgateway:9091"`
+	Jaeger              config.Jaeger
 }
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 			SelfAddress:         cfg.Self.Full(),
 			AuthService:         cfg.AuthService,
 			LogAddress:          cfg.LogAddr,
-			NotificationAddress: cfg.NotificationAddr,
+			NotificationService: cfg.NotificationService,
 			RedisAddress:        cfg.RedisAddr,
 			PrometheusAddress:   cfg.PrometheusAddr,
 			Kafka: server.KafkaConfig{

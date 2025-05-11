@@ -106,7 +106,7 @@ func (c *Client) Read(ctx context.Context, token string, all bool, id int64) err
 	return nil
 }
 
-func (c *Client) List(ctx context.Context, token string) ([]*Notification, error) {
+func (c *Client) List(ctx context.Context, token string) ([]*pb.NotificationData, error) {
 	ctx = metadata.AppendToOutgoingContext(ctx, internal.SessionHeader, token)
 
 	res, err := c.notificationClient.List(ctx, new(pb.NotificationListRequest))
@@ -114,16 +114,16 @@ func (c *Client) List(ctx context.Context, token string) ([]*Notification, error
 		return nil, err
 	}
 
-	notifications := make([]*Notification, len(res.GetList()))
+	notifications := make([]*pb.NotificationData, len(res.GetList()))
 
 	for index, raw := range res.GetList() {
-		notifications[index] = &Notification{
-			ID:      raw.GetId(),
+		notifications[index] = &pb.NotificationData{
+			Id:      raw.GetId(),
 			Kind:    raw.GetKind(),
 			Level:   raw.GetLevel(),
 			Title:   raw.GetTitle(),
 			Body:    raw.GetBody(),
-			Created: raw.GetCreated().AsTime(),
+			Created: raw.GetCreated(),
 		}
 	}
 

@@ -18,7 +18,7 @@ var (
 )
 
 // createUser - создает нового пользователя
-func (s *authServer) createUser(ctx context.Context, login, password string) (int64, error) {
+func (s *server) createUser(ctx context.Context, login, password string) (int64, error) {
 	salt := randomSHA256String()
 	login = strings.ToLower(login)
 
@@ -35,7 +35,7 @@ func (s *authServer) createUser(ctx context.Context, login, password string) (in
 }
 
 // createSession - создает новую сессию пользователя
-func (s *authServer) createSession(ctx context.Context, login, password string) (string, error) {
+func (s *server) createSession(ctx context.Context, login, password string) (string, error) {
 	user, err := s.checkUser(ctx, login, password)
 	if err != nil {
 		return "", fmt.Errorf("create session: %w", err)
@@ -55,7 +55,7 @@ func (s *authServer) createSession(ctx context.Context, login, password string) 
 }
 
 // deleteSession - удаляет сессию пользователя
-func (s *authServer) deleteSession(ctx context.Context, token string) error {
+func (s *server) deleteSession(ctx context.Context, token string) error {
 	err := s.db.DeleteSessionByToken(ctx, token)
 	if err != nil {
 		return fmt.Errorf("delete session: %w", err)
@@ -65,7 +65,7 @@ func (s *authServer) deleteSession(ctx context.Context, token string) error {
 }
 
 // checkUser - проверяет данные пользователя
-func (s *authServer) checkUser(ctx context.Context, login, password string) (*storage.User, error) {
+func (s *server) checkUser(ctx context.Context, login, password string) (*storage.User, error) {
 	login = strings.ToLower(login)
 
 	user, err := s.db.GetUserByLogin(ctx, login)
@@ -88,7 +88,7 @@ func (s *authServer) checkUser(ctx context.Context, login, password string) (*st
 }
 
 // getUser - возвращает данные пользователя по токену
-func (s *authServer) getUser(ctx context.Context, token string) (*storage.User, error) {
+func (s *server) getUser(ctx context.Context, token string) (*storage.User, error) {
 	session, err := s.db.GetSessionByToken(ctx, token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

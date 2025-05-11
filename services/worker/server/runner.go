@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
-	notificationServerClient "github.com/gbh007/buttoners/services/notification/client"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
 	"go.opentelemetry.io/otel/codes"
@@ -18,7 +18,7 @@ import (
 type runner struct {
 	tracer trace.Tracer
 
-	notification *notificationServerClient.Client
+	notification *notificationclient.Client
 	db           *storage.Database
 	queue        chan rabbitmq.Read[handlerdto.RabbitMQData]
 }
@@ -55,15 +55,16 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[handlerdto
 
 	startTime := time.Now()
 
-	n := &notificationServerClient.Notification{
-		Kind: notificationServerClient.ButtonKind,
+	n := notificationclient.NewRequest{
+		UserID: data.UserID,
+		Kind:   "button",
 	}
 
 	errText := ""
 
 	result, resultText, err := r.someBusinessLogic(ctx, data.Duration, data.Chance)
 	if err != nil {
-		n.Level = notificationServerClient.ErrorLevel
+		n.Level = "error"
 		n.Title = "Ошибка"
 		n.Body = fmt.Sprintf("Ошибка во время выполнения:\n%s", err.Error())
 
@@ -72,7 +73,7 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[handlerdto
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "business")
 	} else {
-		n.Level = notificationServerClient.SuccessLevel
+		n.Level = "success"
 		n.Title = "Завершено"
 		n.Body = resultText
 	}
@@ -104,7 +105,7 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[handlerdto
 	notificationCtx, notificationCnl := context.WithTimeout(ctx, time.Second*10)
 	defer notificationCnl()
 
-	err = r.notification.New(notificationCtx, data.UserID, n)
+	err = r.notification.New(notificationCtx, n)
 	if err != nil {
 		log.Println(err)
 

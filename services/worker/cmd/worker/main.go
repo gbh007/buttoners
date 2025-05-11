@@ -14,12 +14,12 @@ import (
 )
 
 type Config struct {
-	RabbitMQ         config.RabbitMQ
-	DB               config.Database
-	NotificationAddr string `envconfig:"default=notification:50051"`
-	PrometheusAddr   string `envconfig:"default=pushgateway:9091"`
-	RunnerCount      int    `envconfig:"default=20"`
-	Jaeger           config.Jaeger
+	RabbitMQ            config.RabbitMQ
+	DB                  config.Database
+	NotificationService config.Service
+	PrometheusAddr      string `envconfig:"default=pushgateway:9091"`
+	RunnerCount         int    `envconfig:"default=20"`
+	Jaeger              config.Jaeger
 }
 
 func main() {
@@ -52,7 +52,7 @@ func main() {
 		ctx,
 		server.Config{
 			ServiceName:         metrics.InstanceName,
-			NotificationAddress: cfg.NotificationAddr,
+			NotificationService: cfg.NotificationService,
 			PrometheusAddress:   cfg.PrometheusAddr,
 			DB: server.DBConfig{
 				Username:     cfg.DB.User,

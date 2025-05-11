@@ -7,7 +7,7 @@ import (
 	"github.com/gbh007/buttoners/core/clients/authclient"
 )
 
-func (s *authServer) Login(w http.ResponseWriter, r *http.Request) {
+func (s *server) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	req, err := unmarshal[authclient.LoginRequest](r.Body)

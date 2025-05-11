@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Self           config.Addr
+	Self           config.Service
 	DB             config.Database
 	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
 	Jaeger         config.Jaeger
@@ -49,7 +49,8 @@ func main() {
 	err = server.Run(
 		ctx,
 		server.Config{
-			SelfAddress:       cfg.Self.Full(),
+			SelfAddress:       cfg.Self.Addr,
+			SelfToken:         cfg.Self.Token,
 			PrometheusAddress: cfg.PrometheusAddr,
 			DB: server.DBConfig{
 				Username:     cfg.DB.User,
