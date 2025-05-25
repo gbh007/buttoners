@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	logClient "github.com/gbh007/buttoners/services/log/client"
-
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/redis"
@@ -25,7 +24,7 @@ type pbServer struct {
 
 	auth         *authclient.Client
 	notification *notificationclient.Client
-	log          *logClient.Client
+	log          *logclient.Client
 	kafkaTask    *kafka.Client
 	kafkaLog     *kafka.Client
 	redis        *redis.Client[dto.UserInfo]

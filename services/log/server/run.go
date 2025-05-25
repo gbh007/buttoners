@@ -3,27 +3,23 @@ package server
 import (
 	"context"
 	"log"
-	"net"
+	"net/http"
 	"sync"
+	"time"
 
+	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
-	"github.com/gbh007/buttoners/services/log/internal/pb"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"github.com/gofiber/contrib/otelfiber/v2"
+	"github.com/gofiber/fiber/v2"
 	"go.opentelemetry.io/otel"
-	"google.golang.org/grpc"
 )
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
-	if err != nil {
-		return err
-	}
-
-	lis, err := net.Listen("tcp", cfg.SelfAddress)
 	if err != nil {
 		return err
 	}
@@ -47,15 +43,44 @@ func Run(ctx context.Context, cfg Config) error {
 		db: db,
 	}
 
-	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(logInterceptor),
-		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
-	pb.RegisterLogServer(grpcServer, server)
+	fb := fiber.New()
+	fb.All("*", otelfiber.Middleware(
+		otelfiber.WithoutMetrics(true),
+	))
+	fb.All("*", func(ctx *fiber.Ctx) error {
+		token := string(ctx.Request().Header.Peek("authorization"))
+
+		if token == "" {
+			ctx.Set(fiber.HeaderContentType, logclient.ContentType)
+
+			return ctx.
+				Status(http.StatusUnauthorized).
+				JSON(logclient.ErrorResponse{
+					Code:    "unauthorized",
+					Details: "empty token",
+				})
+		}
+
+		if token != cfg.SelfToken {
+			ctx.Set(fiber.HeaderContentType, logclient.ContentType)
+
+			return ctx.
+				Status(http.StatusForbidden).
+				JSON(logclient.ErrorResponse{
+					Code:    "forbidden",
+					Details: "invalid token",
+				})
+		}
+
+		return ctx.Next()
+	})
+
+	fb.Post(logclient.ActivityPath, server.Activity)
 
 	go func() {
 		<-ctx.Done()
-		grpcServer.GracefulStop()
+		sCtx, _ := context.WithTimeout(context.Background(), time.Second*10)
+		fb.ShutdownWithContext(sCtx)
 	}()
 
 	wg := new(sync.WaitGroup)
@@ -73,7 +98,7 @@ func Run(ctx context.Context, cfg Config) error {
 	go func() {
 		defer wg.Done()
 
-		err := grpcServer.Serve(lis)
+		err := fb.Listen(cfg.SelfAddress)
 		if err != nil {
 			log.Println(err)
 		}

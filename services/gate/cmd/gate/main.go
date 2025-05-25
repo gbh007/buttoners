@@ -18,7 +18,7 @@ type Config struct {
 	Kafka               config.Kafka
 	AuthService         config.Service
 	NotificationService config.Service
-	LogAddr             string `envconfig:"default=log:50051"`
+	LogService          config.Service
 	RedisAddr           string `envconfig:"default=redis:6379"`
 	PrometheusAddr      string `envconfig:"default=pushgateway:9091"`
 	Jaeger              config.Jaeger
@@ -55,7 +55,7 @@ func main() {
 		server.Config{
 			SelfAddress:         cfg.Self.Full(),
 			AuthService:         cfg.AuthService,
-			LogAddress:          cfg.LogAddr,
+			LogService:          cfg.LogService,
 			NotificationService: cfg.NotificationService,
 			RedisAddress:        cfg.RedisAddr,
 			PrometheusAddress:   cfg.PrometheusAddr,

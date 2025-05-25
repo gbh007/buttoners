@@ -1,0 +1,95 @@
+openapi: 3.0.0
+
+info:
+  title: Log service
+  version: 0.0.0
+
+servers:
+  - url: http://localhost:8080/
+
+security:
+  - headerAuth: []
+
+paths:
+  /api/v1/activity:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: integer
+                  format: int64
+
+      responses:
+        200:
+          description: Данные найдены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request_count:
+                    type: integer
+                    format: int64
+                  last_request:
+                    type: string
+                    format: date-time
+                required:
+                  - request_count
+                  - last_request
+        400:
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        401:
+          description: Токен доступа не предоставлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        403:
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        404:
+          description: Данные не найдены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        500:
+          description: Серверная ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Данные ошибки
+      properties:
+        code:
+          type: string
+          description: Внутренний код ошибки
+        details:
+          type: string
+          description: Детальные данные ошибки
+      required:
+        - code
+
+  securitySchemes:
+    headerAuth:
+      name: Authorization
+      in: header
+      type: apiKey

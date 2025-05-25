@@ -1,9 +1,10 @@
 BUILD_ENV = GOOS=linux GOARCH=amd64 CGO_ENABLED=0
+WD = $(shell pwd)
+SERVICE_LIST = $(shell ls -d services/*/)
 
 .PHONY: proto
 proto:
 	protoc -I=. --go_out=. --go-grpc_out=. services/gate/gate.proto
-	protoc -I=. --go_out=. --go-grpc_out=. services/log/log.proto
 
 .PHONY: install-proto
 install-proto:
@@ -32,6 +33,20 @@ logs:
 down:
 	docker compose -f ./deployments/docker-compose.yml down --remove-orphans
 
+.PHONY: cleanup
+cleanup:
+	docker compose -f ./deployments/docker-compose.yml down --remove-orphans --volumes
+
 .PHONY: lint
 lint:
 	golangci-lint run
+
+
+.PHONY: tidy
+tidy:
+	cd $(WD)/core && go mod tidy
+	for path in $(SERVICE_LIST); do \
+		cd $(WD)/$$path; \
+		echo $$path; \
+		go mod tidy; \
+	done

@@ -1,11 +1,12 @@
 package server
 
 import (
-	"context"
+	"net/http"
 
+	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/services/log/internal/pb"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/gofiber/fiber/v2"
 )
 
 type pbServer struct {
@@ -14,16 +15,39 @@ type pbServer struct {
 	db *storage.Database
 }
 
-func (s *pbServer) Activity(ctx context.Context, req *pb.ActivityRequest) (*pb.ActivityResponse, error) {
-	count, last, err := s.db.SelectCompressedUserLogByUserID(ctx, req.GetUserID())
+func (s *pbServer) Activity(c *fiber.Ctx) error {
+	var req logclient.ActivityRequest
+
+	err := c.BodyParser(&req)
 	if err != nil {
-		return nil, err
+		c.Set(fiber.HeaderContentType, logclient.ContentType)
+
+		return c.
+			Status(http.StatusBadRequest).
+			JSON(logclient.ErrorResponse{
+				Code:    "parse",
+				Details: err.Error(),
+			})
 	}
 
-	return &pb.ActivityResponse{
-		Data: &pb.LogData{
+	count, last, err := s.db.SelectCompressedUserLogByUserID(c.Context(), req.UserID)
+	if err != nil {
+		c.Set(fiber.HeaderContentType, logclient.ContentType)
+
+		return c.
+			Status(http.StatusInternalServerError).
+			JSON(logclient.ErrorResponse{
+				Code:    "logic",
+				Details: err.Error(),
+			})
+	}
+
+	c.Set(fiber.HeaderContentType, logclient.ContentType)
+
+	return c.
+		Status(http.StatusOK).
+		JSON(logclient.ActivityResponse{
 			RequestCount: count,
-			LastRequest:  timestamppb.New(last),
-		},
-	}, nil
+			LastRequest:  last,
+		})
 }

@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Self           config.Addr
+	Self           config.Service
 	Kafka          config.Kafka
 	DB             config.Database
 	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
@@ -51,7 +51,8 @@ func main() {
 		ctx,
 		server.Config{
 			ServiceName:       metrics.InstanceName,
-			SelfAddress:       cfg.Self.Full(),
+			SelfAddress:       cfg.Self.Addr,
+			SelfToken:         cfg.Self.Token,
 			PrometheusAddress: cfg.PrometheusAddr,
 			Kafka: server.KafkaConfig{
 				Addr:    cfg.Kafka.Addr,

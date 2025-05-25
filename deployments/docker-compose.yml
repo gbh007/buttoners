@@ -18,6 +18,8 @@ services:
       AUTH_SERVICE_TOKEN: auth-service-secret
       NOTIFICATION_SERVICE_ADDR: http://notification:8080
       NOTIFICATION_SERVICE_TOKEN: notification-service-secret
+      LOG_SERVICE_ADDR: http://log:8080
+      LOG_SERVICE_TOKEN: log-service-secret
     depends_on:
       - auth
       - kafka
@@ -26,6 +28,8 @@ services:
       - redis
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   auth:
     build:
@@ -46,6 +50,8 @@ services:
       - redis
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   handler:
     build:
@@ -66,6 +72,8 @@ services:
       - rabbitmq
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   log:
     build:
@@ -80,7 +88,8 @@ services:
       DB_PASS: log_pwd
       DB_ADDR: clickhouse:8123
       DB_NAME: log_db
-      SELF_HOST: 0.0.0.0
+      SELF_ADDR: :8080
+      SELF_TOKEN: log-service-secret
     deploy:
       mode: replicated
       replicas: 3
@@ -89,6 +98,8 @@ services:
       - clickhouse
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   worker:
     build:
@@ -115,6 +126,8 @@ services:
       - clickhouse
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   notification:
     build:
@@ -137,6 +150,8 @@ services:
       - mariadb
       - pushgateway
       - jaeger
+    networks:
+      - buttoners-net
 
   mariadb:
     image: mariadb:11
@@ -149,6 +164,8 @@ services:
       - ./maria-db-dev-init.sql:/init.sql
     ports:
       - 13306:3306
+    networks:
+      - buttoners-net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -160,6 +177,8 @@ services:
       - zookeeper-secrets:/etc/zookeeper/secrets
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-log:/var/lib/zookeeper/log
+    networks:
+      - buttoners-net
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -176,6 +195,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - buttoners-net
 
   clickhouse:
     image: clickhouse/clickhouse-server:22.2
@@ -193,6 +214,8 @@ services:
       - ./clickhouse-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 18123:8123
+    networks:
+      - buttoners-net
 
   rabbitmq:
     image: rabbitmq:3.12
@@ -202,12 +225,16 @@ services:
       RABBITMQ_DEFAULT_PASS: task_pwd
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - buttoners-net
 
   redis:
     image: redis:7.2
     restart: none
     volumes:
       - redis-data:/data
+    networks:
+      - buttoners-net
 
   prometheus:
     image: prom/prometheus:v2.43.0
@@ -220,16 +247,26 @@ services:
       - 19090:9090
     depends_on:
       - pushgateway
+    networks:
+      - buttoners-net
 
   pushgateway:
     image: prom/pushgateway:v1.6.0
     restart: none
+    networks:
+      - buttoners-net
 
   jaeger:
     image: jaegertracing/all-in-one
     restart: none
     ports:
       - 16686:16686
+    networks:
+      - buttoners-net
+
+networks:
+  buttoners-net:
+    driver: bridge
 
 volumes:
   mariadb:

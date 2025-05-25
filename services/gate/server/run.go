@@ -4,9 +4,8 @@ import (
 	"context"
 	"net"
 
-	logClient "github.com/gbh007/buttoners/services/log/client"
-
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
@@ -19,8 +18,9 @@ import (
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+	const serviceName = "gate-service"
 
-	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, "gate-service")
+	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
 	if err != nil {
 		return err
 	}
@@ -36,14 +36,14 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer redisClient.Close()
 
-	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, "gate-service")
+	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, serviceName)
 	if err != nil {
 		return err
 	}
 
 	defer notificationClient.Close()
 
-	logClient, err := logClient.New(cfg.LogAddress)
+	logClient, err := logclient.New(cfg.LogService.Addr, cfg.LogService.Token, serviceName)
 	if err != nil {
 		return err
 	}
