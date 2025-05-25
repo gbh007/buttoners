@@ -1,6 +1,7 @@
 BUILD_ENV = GOOS=linux GOARCH=amd64 CGO_ENABLED=0
 WD = $(shell pwd)
 SERVICE_LIST = $(shell ls -d services/*/)
+GO_APP_LIST = $(SERVICE_LIST) core/ ui/console
 
 .PHONY: proto
 proto:
@@ -20,6 +21,7 @@ build:
 	$(BUILD_ENV) go build -o ./bin/build/worker ./services/worker/cmd/worker
 	$(BUILD_ENV) go build -o ./bin/build/log ./services/log/cmd/log
 	$(BUILD_ENV) go build -o ./bin/build/notification ./services/notification/cmd/notification
+	$(BUILD_ENV) go build -o ./bin/build/console-ui ./ui/console/cmd
 
 .PHONY: up
 up: build
@@ -37,6 +39,10 @@ down:
 cleanup:
 	docker compose -f ./deployments/docker-compose.yml down --remove-orphans --volumes
 
+.PHONY: console-ui
+console-ui: build
+	./bin/build/console-ui
+
 .PHONY: lint
 lint:
 	golangci-lint run
@@ -44,8 +50,7 @@ lint:
 
 .PHONY: tidy
 tidy:
-	cd $(WD)/core && go mod tidy
-	for path in $(SERVICE_LIST); do \
+	for path in $(GO_APP_LIST); do \
 		cd $(WD)/$$path; \
 		echo $$path; \
 		go mod tidy; \
