@@ -15,7 +15,11 @@ func Run() error {
 	}
 
 	startView := screens.NewLogin(shared)
-	p := tea.NewProgram(startView)
+	p := tea.NewProgram(
+		startView,
+		tea.WithContext(shared.Ctx),
+		tea.WithAltScreen(),
+	)
 	_, err := p.Run()
 	if err != nil {
 		return err
