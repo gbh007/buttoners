@@ -16,6 +16,7 @@ var (
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("21"))
 	subTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("117"))
 	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("125"))
+	helpStyle     = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("66"))
 )
 
 type Shared struct {

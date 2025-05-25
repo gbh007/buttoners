@@ -24,8 +24,8 @@ type MultiInput struct {
 	blurredButton string
 }
 
-func NewMultiInput(fields []MultiInputField) *MultiInput {
-	v := &MultiInput{
+func NewMultiInput(fields []MultiInputField) MultiInput {
+	v := MultiInput{
 		inputs:        make([]textinput.Model, len(fields)),
 		fields:        fields,
 		focusedButton: focusedStyle.Render("[ Готово ]"),
@@ -54,11 +54,11 @@ func NewMultiInput(fields []MultiInputField) *MultiInput {
 	return v
 }
 
-func (v *MultiInput) Init() tea.Cmd {
+func (v MultiInput) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (v *MultiInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (v MultiInput) Update(msg tea.Msg) (MultiInput, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -105,7 +105,7 @@ func (v *MultiInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 }
 
-func (v *MultiInput) View() string {
+func (v MultiInput) View() string {
 	var b strings.Builder
 
 	for i := range v.inputs {
@@ -126,7 +126,7 @@ func (v *MultiInput) View() string {
 	return b.String()
 }
 
-func (v *MultiInput) Values() []string {
+func (v MultiInput) Values() []string {
 	res := make([]string, len(v.inputs))
 
 	for i := range v.inputs {
@@ -136,6 +136,6 @@ func (v *MultiInput) Values() []string {
 	return res
 }
 
-func (v *MultiInput) Finished() bool {
+func (v MultiInput) Finished() bool {
 	return v.focusIndex == len(v.inputs)
 }

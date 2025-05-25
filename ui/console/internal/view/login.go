@@ -8,14 +8,19 @@ import (
 	"github.com/gbh007/buttoners/ui/console/internal/model"
 )
 
-type LoginView struct {
-	shared    Shared
-	form      *MultiInput
-	lastError error
+type LoginViewEvent struct {
+	err error
 }
 
-func NewLoginView(shared Shared) *LoginView {
-	v := &LoginView{
+type LoginView struct {
+	shared    Shared
+	form      MultiInput
+	lastError error
+	loader    LoaderView
+}
+
+func NewLoginView(shared Shared) LoginView {
+	v := LoginView{
 		shared: shared,
 		form: NewMultiInput([]MultiInputField{
 			{
@@ -36,16 +41,17 @@ func NewLoginView(shared Shared) *LoginView {
 				Mode:        textinput.EchoPassword,
 			},
 		}),
+		loader: NewLoaderView("Сохранение"),
 	}
 
 	return v
 }
 
-func (v *LoginView) Init() tea.Cmd {
+func (v LoginView) Init() tea.Cmd {
 	return v.form.Init()
 }
 
-func (v *LoginView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (v LoginView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -55,30 +61,56 @@ func (v *LoginView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if v.form.Finished() {
 				values := v.form.Values()
-				v.lastError = v.shared.storage.SetConnectionData(v.shared.ctx, model.Connection{
-					Addr:     values[0],
-					Login:    values[1],
-					Password: values[2],
-				})
-				if v.lastError == nil {
-					return NewStorageDebugView(v.shared), nil
-				}
+				var cmd tea.Cmd
+				v.loader, cmd = v.loader.Activate()
+				return v, tea.Batch(
+					cmd,
+					func() tea.Msg {
+						err := v.shared.storage.SetConnectionData(v.shared.ctx, model.Connection{
+							Addr:     values[0],
+							Login:    values[1],
+							Password: values[2],
+						})
+
+						return LoginViewEvent{
+							err: err,
+						}
+					},
+				)
 			}
 		}
+	case LoginViewEvent:
+		if msg.err != nil {
+			var cmd tea.Cmd
+			v.loader, cmd = v.loader.Deactivate()
+			v.lastError = msg.err
+			return v, cmd
+		}
+
+		s := NewStorageDebugView(v.shared)
+		return s, s.Init()
 	}
 
-	_, cmd := v.form.Update(msg)
+	var formCmd, loaderCmd tea.Cmd
 
-	return v, cmd
+	v.form, formCmd = v.form.Update(msg)
+	v.loader, loaderCmd = v.loader.Update(msg)
+
+	return v, tea.Batch(formCmd, loaderCmd)
 }
 
-func (v *LoginView) View() string {
+func (v LoginView) View() string {
 	var b strings.Builder
 
 	b.WriteString(titleStyle.Render("Авторизация:"))
 	b.WriteString("\n\n")
 	b.WriteString(renderError(v.lastError))
-	b.WriteString(v.form.View())
+
+	if v.loader.IsActivate() {
+		b.WriteString(v.loader.View())
+	} else {
+		b.WriteString(v.form.View())
+	}
 
 	return b.String()
 }
