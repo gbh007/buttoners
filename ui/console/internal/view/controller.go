@@ -14,7 +14,7 @@ func Run() error {
 		Storage: storage.New(),
 	}
 
-	startView := screens.NewLogin(shared)
+	startView := screens.NewMenu(shared)
 	p := tea.NewProgram(
 		startView,
 		tea.WithContext(shared.Ctx),
