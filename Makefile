@@ -3,9 +3,12 @@ WD = $(shell pwd)
 SERVICE_LIST = $(shell ls -d services/*/)
 GO_APP_LIST = $(SERVICE_LIST) core/ ui/console
 
-.PHONY: proto
-proto:
+.PHONY: gen-proto
+gen-proto:
 	protoc -I=. --go_out=. --go-grpc_out=. services/gate/gate.proto
+
+.PHONY: generate
+generate: gen-proto
 
 .PHONY: install-proto
 install-proto:
@@ -38,6 +41,7 @@ down:
 .PHONY: cleanup
 cleanup:
 	docker compose -f ./deployments/docker-compose.yml down --remove-orphans --volumes
+	rm -r ./bin/build
 
 .PHONY: console-ui
 console-ui: build
