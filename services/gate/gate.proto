@@ -4,7 +4,7 @@ package gate;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "services/gate/internal/pb";
+option go_package = "core/clients/gateclient/gen/pb";
 
 service Gate {
   rpc Login(LoginRequest) returns (LoginResponse) {}

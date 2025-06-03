@@ -1,4 +1,4 @@
-package internal
+package gateclient
 
 const (
 	SessionHeader = "X-Session"

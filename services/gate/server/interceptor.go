@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/gbh007/buttoners/core/clients/gateclient"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/services/gate/dto"
-	"github.com/gbh007/buttoners/services/gate/internal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -52,7 +52,7 @@ func (s *pbServer) logInterceptor(
 	if ok {
 		kafkaData.RealIP = fistOf(md.Get("X-Real-IP"))
 		kafkaData.ForwardedFor = md.Get("X-Forwarded-For")
-		kafkaData.SessionToken = fistOf(md.Get(internal.SessionHeader))
+		kafkaData.SessionToken = fistOf(md.Get(gateclient.SessionHeader))
 	}
 
 	requestStart := time.Now()
