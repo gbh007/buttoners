@@ -54,7 +54,7 @@ func Init(ctx context.Context, username, password, dbHostWithPort, databaseName 
 	}
 
 	err = m.Up()
-	if err != nil {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return nil, fmt.Errorf("%w: up migrations: %w", errDatabase, err)
 	}
 

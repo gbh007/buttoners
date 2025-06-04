@@ -20,6 +20,7 @@ func New(addr, token, name string) (*Client, error) {
 	c := &Client{
 		addr:  strings.TrimRight(addr, "/"),
 		token: token,
+		name:  name,
 	}
 
 	client := req.C().
