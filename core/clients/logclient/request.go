@@ -17,9 +17,6 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 		SetBody(reqV).
 		SetSuccessResult(&successResponse).
 		SetErrorResult(&errorResponse).
-		SetHeader("Authorization", c.token).    // FIXME: устанавливать через стандартные заголовки клиента
-		SetHeader("X-Client-Name", c.name).     // FIXME: устанавливать через стандартные заголовки клиента
-		SetHeader("Content-Type", ContentType). // FIXME: устанавливать через стандартные заголовки клиента
 		Post(path)
 
 	if err != nil {

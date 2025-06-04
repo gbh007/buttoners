@@ -23,15 +23,17 @@ func New(addr, token, name string) (*Client, error) {
 		name:  name,
 	}
 
-	client := req.C().
-		SetBaseURL(c.addr).
-		SetCommonHeader("Authorization", c.token).
-		SetCommonHeader("X-Client-Name", c.name).
-		SetCommonHeader("Content-Type", ContentType)
+	client := req.C()
 
 	client.Transport = req.T().WrapRoundTrip(func(rt http.RoundTripper) http.RoundTripper {
 		return otelhttp.NewTransport(rt)
 	})
+
+	client = client.
+		SetBaseURL(c.addr).
+		SetCommonHeader("Authorization", c.token).
+		SetCommonHeader("X-Client-Name", c.name).
+		SetCommonHeader("Content-Type", ContentType)
 
 	c.client = client
 

@@ -50,8 +50,6 @@ func Run(ctx context.Context, cfg Config) error {
 	fb.All("*", func(ctx *fiber.Ctx) error {
 		token := string(ctx.Request().Header.Peek("Authorization"))
 
-		log.Println(string(ctx.Request().Header.Header()))
-
 		if token == "" {
 			ctx.Set(fiber.HeaderContentType, logclient.ContentType)
 
