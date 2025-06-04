@@ -10,7 +10,7 @@ import (
 
 type menuItem struct {
 	Name              string
-	ScreenConstructor func(shared SharedState) (tea.Model, tea.Cmd)
+	ScreenConstructor func(shared *SharedState) (tea.Model, tea.Cmd)
 }
 
 func (i menuItem) FilterValue() string { return i.Name }
@@ -37,26 +37,46 @@ func (d menuItemDelegate) Render(w io.Writer, m list.Model, index int, listItem 
 }
 
 type Menu struct {
-	shared SharedState
+	shared *SharedState
 	list   list.Model
 }
 
-func NewMenu(shared SharedState) Menu {
+func NewMenu(shared *SharedState) Menu {
 	items := []list.Item{
 		menuItem{
 			Name: "Login",
-			ScreenConstructor: func(shared SharedState) (tea.Model, tea.Cmd) {
+			ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
 				screen := NewLogin(shared)
 				return screen, screen.Init()
 			},
 		},
 		menuItem{
-			Name: "Storage debug",
-			ScreenConstructor: func(shared SharedState) (tea.Model, tea.Cmd) {
-				screen := NewStorageDebug(shared)
+			Name: "Registration",
+			ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
+				screen := NewRegistration(shared)
 				return screen, screen.Init()
 			},
 		},
+	}
+
+	if shared.GateToken != "" {
+		items = append(
+			items,
+			menuItem{
+				Name: "Storage debug",
+				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
+					screen := NewStorageDebug(shared)
+					return screen, screen.Init()
+				},
+			},
+			menuItem{
+				Name: "Gate debug",
+				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
+					screen := NewGateDebug(shared)
+					return screen, screen.Init()
+				},
+			},
+		)
 	}
 
 	l := list.New(items, menuItemDelegate{}, 20, 14)

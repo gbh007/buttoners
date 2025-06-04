@@ -28,7 +28,7 @@ type UserInfo struct {
 func New(addr string) (*Client, error) {
 	c := new(Client)
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),

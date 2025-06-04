@@ -4,14 +4,22 @@ import (
 	"context"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/gbh007/buttoners/core/clients/gateclient"
 	"github.com/gbh007/buttoners/ui/console/internal/storage"
 	"github.com/gbh007/buttoners/ui/console/internal/view/screens"
 )
 
 func Run() error {
-	shared := screens.SharedState{
-		Ctx:     context.Background(),
-		Storage: storage.New(),
+	gateClient, err := gateclient.New("localhost:14281") // FIXME: не прибивать гвоздями
+	if err != nil {
+		return err
+	}
+
+
+	shared := &screens.SharedState{
+		Ctx:        context.Background(),
+		Storage:    storage.New(),
+		GateClient: gateClient,
 	}
 
 	startView := screens.NewMenu(shared)
@@ -20,7 +28,7 @@ func Run() error {
 		tea.WithContext(shared.Ctx),
 		tea.WithAltScreen(),
 	)
-	_, err := p.Run()
+	_, err = p.Run()
 	if err != nil {
 		return err
 	}

@@ -15,13 +15,13 @@ type StorageDebugEvent struct {
 }
 
 type StorageDebug struct {
-	shared    SharedState
+	shared    *SharedState
 	data      model.Connection
 	loader    components.Loader
 	lastError error
 }
 
-func NewStorageDebug(shared SharedState) StorageDebug {
+func NewStorageDebug(shared *SharedState) StorageDebug {
 	return StorageDebug{
 		shared: shared,
 		loader: components.NewLoader("Загрузка"),

@@ -8,19 +8,19 @@ import (
 	"github.com/gbh007/buttoners/ui/console/internal/view/components"
 )
 
-type LoginEvent struct {
+type RegistrationEvent struct {
 	err error
 }
 
-type Login struct {
+type Registration struct {
 	shared    *SharedState
 	form      components.MultiInput
 	lastError error
 	loader    components.Loader
 }
 
-func NewLogin(shared *SharedState) Login {
-	return Login{
+func NewRegistration(shared *SharedState) Registration {
+	return Registration{
 		shared: shared,
 		form: components.NewMultiInput([]components.MultiInputField{
 			{
@@ -45,11 +45,11 @@ func NewLogin(shared *SharedState) Login {
 	}
 }
 
-func (m Login) Init() tea.Cmd {
+func (m Registration) Init() tea.Cmd {
 	return m.form.Init()
 }
 
-func (m Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Registration) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -68,24 +68,20 @@ func (m Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(
 					cmd,
 					func() tea.Msg {
-						token, err := m.shared.GateClient.Login(
+						err := m.shared.GateClient.Register(
 							m.shared.Ctx,
 							values[1],
 							values[2],
 						)
 
-						if err == nil {
-							m.shared.GateToken = token
-						}
-
-						return LoginEvent{
+						return RegistrationEvent{
 							err: err,
 						}
 					},
 				)
 			}
 		}
-	case LoginEvent:
+	case RegistrationEvent:
 		if msg.err != nil {
 			var cmd tea.Cmd
 			m.loader, cmd = m.loader.Deactivate()
@@ -105,10 +101,10 @@ func (m Login) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(formCmd, loaderCmd)
 }
 
-func (m Login) View() string {
+func (m Registration) View() string {
 	var b strings.Builder
 
-	b.WriteString(components.TitleStyle.Render("Авторизация:"))
+	b.WriteString(components.TitleStyle.Render("Регистрация:"))
 	b.WriteString("\n\n")
 	b.WriteString(components.RenderError(m.lastError))
 
