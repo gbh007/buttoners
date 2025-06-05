@@ -76,6 +76,13 @@ func NewMenu(shared *SharedState) Menu {
 					return screen, screen.Init()
 				},
 			},
+			menuItem{
+				Name: "Button",
+				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
+					screen := NewMainButton(shared)
+					return screen, screen.Init()
+				},
+			},
 		)
 	}
 

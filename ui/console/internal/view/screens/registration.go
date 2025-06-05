@@ -40,7 +40,7 @@ func NewRegistration(shared *SharedState) Registration {
 				CharLimit:   50,
 				Mode:        textinput.EchoPassword,
 			},
-		}),
+		}, "Готово"),
 		loader: components.NewLoader("Сохранение"),
 	}
 }

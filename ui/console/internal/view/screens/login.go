@@ -40,7 +40,7 @@ func NewLogin(shared *SharedState) Login {
 				CharLimit:   50,
 				Mode:        textinput.EchoPassword,
 			},
-		}),
+		}, "Готово"),
 		loader: components.NewLoader("Сохранение"),
 	}
 }

@@ -24,12 +24,12 @@ type MultiInput struct {
 	blurredButton string
 }
 
-func NewMultiInput(fields []MultiInputField) MultiInput {
+func NewMultiInput(fields []MultiInputField, buttonText string) MultiInput {
 	m := MultiInput{
 		inputs:        make([]textinput.Model, len(fields)),
 		fields:        fields,
-		focusedButton: FocusedStyle.Render("[ Готово ]"),
-		blurredButton: fmt.Sprintf("[ %s ]", BlurredStyle.Render("Готово")),
+		focusedButton: FocusedStyle.Render("[ " + buttonText + " ]"),
+		blurredButton: fmt.Sprintf("[ %s ]", BlurredStyle.Render(buttonText)),
 	}
 
 	var t textinput.Model
