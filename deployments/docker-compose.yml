@@ -28,8 +28,6 @@ services:
       - redis
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   auth:
     build:
@@ -50,8 +48,6 @@ services:
       - redis
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   handler:
     build:
@@ -72,8 +68,6 @@ services:
       - rabbitmq
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   log:
     build:
@@ -98,8 +92,6 @@ services:
       - clickhouse
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   worker:
     build:
@@ -126,8 +118,6 @@ services:
       - clickhouse
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   notification:
     build:
@@ -150,8 +140,6 @@ services:
       - mariadb
       - pushgateway
       - jaeger
-    networks:
-      - buttoners-net
 
   mariadb:
     image: mariadb:11
@@ -164,8 +152,6 @@ services:
       - ./maria-db-dev-init.sql:/init.sql
     ports:
       - 13306:3306
-    networks:
-      - buttoners-net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -177,8 +163,6 @@ services:
       - zookeeper-secrets:/etc/zookeeper/secrets
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-log:/var/lib/zookeeper/log
-    networks:
-      - buttoners-net
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -195,8 +179,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    networks:
-      - buttoners-net
 
   clickhouse:
     image: clickhouse/clickhouse-server:22.2
@@ -214,8 +196,6 @@ services:
       - ./clickhouse-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 18123:8123
-    networks:
-      - buttoners-net
 
   rabbitmq:
     image: rabbitmq:3.12
@@ -225,48 +205,97 @@ services:
       RABBITMQ_DEFAULT_PASS: task_pwd
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      - buttoners-net
 
   redis:
     image: redis:7.2
     restart: none
     volumes:
       - redis-data:/data
-    networks:
-      - buttoners-net
-
-  prometheus:
-    image: prom/prometheus:v2.43.0
-    restart: none
-    volumes:
-      - ./prometheus-dev.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus-console:/usr/share/prometheus/consoles/custom
-      - prometheus-data:/prometheus
-    ports:
-      - 19090:9090
-    depends_on:
-      - pushgateway
-    networks:
-      - buttoners-net
 
   pushgateway:
     image: prom/pushgateway:v1.6.0
     restart: none
-    networks:
-      - buttoners-net
 
   jaeger:
     image: jaegertracing/all-in-one
     restart: none
     ports:
       - 16686:16686
-    networks:
-      - buttoners-net
 
-networks:
-  buttoners-net:
-    driver: bridge
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.110.0
+    restart: always
+    command:
+      - "-retentionPeriod=7d"
+      - "-promscrape.config=/etc/prometheus/prometheus.yml"
+    volumes:
+      - victoriametrics-data:/victoria-metrics-data
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - 8428:8428
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  grafana:
+    image: grafana/grafana-oss:11.5.0
+    restart: always
+    user: 0:0
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+      - ./dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_INSTALL_PLUGINS: victoriametrics-logs-datasource
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    ports:
+      - 3000:3000
+    depends_on:
+      - victoriametrics
+      - victorialogs
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  victorialogs:
+    image: docker.io/victoriametrics/victoria-logs:v1.10.1-victorialogs
+    restart: always
+    command:
+      - "-retentionPeriod=1d"
+      - "-retention.maxDiskSpaceUsageBytes=100MiB"
+      - "-insert.maxLineSizeBytes=1MiB"
+    ports:
+      - 9428:9428
+    volumes:
+      - victorialogs-data:/victoria-logs-data
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  vector:
+    image: docker.io/timberio/vector:0.42.X-distroless-libc
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker:/var/lib/docker
+      - ./configs/vector.yml:/etc/vector/vector.yaml:ro
+      - vector-data:/var/lib/vector
+    user: root
+    depends_on:
+      - victorialogs
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
 
 volumes:
   mariadb:
@@ -279,4 +308,7 @@ volumes:
   clickhouse-log:
   rabbitmq-data:
   redis-data:
-  prometheus-data:
+  victoriametrics-data:
+  grafana-data:
+  victorialogs-data:
+  vector-data:

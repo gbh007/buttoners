@@ -1,0 +1,75 @@
+data_dir: /var/lib/vector
+
+sources:
+  docker:
+    type: docker_logs
+
+transforms:
+  docker_filter:
+    type: filter
+    inputs:
+      - docker_parser
+    condition: .label."com.docker.compose.project" == "buttoners"
+  docker_parser:
+    type: remap
+    inputs:
+      - docker
+    source: |
+      message, err = parse_json(.message)
+      if (err == null) {
+        if exists(message.msg) {
+          .msg = message.msg
+          del(message.msg)
+          .message = message
+        } else if exists(message.message) {
+          .msg = message.message
+          del(message.message)
+          .message = message
+        } else {
+          .msg = .message
+          del(.message)
+        }
+      } else {
+        message, err = parse_key_value(.message)
+        if (err == null) {
+          if exists(message.msg) {
+            .msg = message.msg
+            del(message.msg)
+            .message = message
+          } else if exists(message.message) {
+            .msg = message.message
+            del(message.message)
+            .message = message
+          } else {
+            .msg = .message
+            del(.message)
+          }
+        } else {
+          .msg = .message
+          del(.message)
+        }
+      }
+      .host = "buttoners stand"
+      .service_name = .container_name
+      .job = "dockerlogs"
+
+sinks:
+  http_docker:
+    type: http
+    inputs:
+      - docker_filter
+    uri: http://victorialogs:9428/insert/jsonline
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    compression: gzip
+    healthcheck:
+      enabled: false
+    request:
+      headers:
+        AccountID: "0"
+        ProjectID: "0"
+        VL-Stream-Fields: source_type,host,container_name,label.com.docker.compose.service
+        VL-Msg-Field: msg
+        VL-Time-Field: timestamp
