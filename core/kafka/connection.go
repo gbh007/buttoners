@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -44,10 +45,13 @@ func (c *Client) Connect(createTopic bool) error {
 		})
 	}
 
-	c.writer = kafka.NewWriter(kafka.WriterConfig{
-		Brokers: []string{c.addr},
-		Topic:   c.topic,
-	})
+	c.writer = &kafka.Writer{
+		Addr:            kafka.TCP(c.addr),
+		Topic:           c.topic,
+		WriteBackoffMin: 10 * time.Millisecond,
+		WriteBackoffMax: 50 * time.Millisecond,
+		BatchTimeout:    100 * time.Millisecond,
+	}
 
 	return nil
 }
