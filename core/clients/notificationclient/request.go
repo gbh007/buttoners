@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel"
 )
 
 func marshal[T any](w io.Writer, v T) error {
@@ -32,16 +33,25 @@ func unmarshal[T any](data []byte) (T, error) {
 }
 
 func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (RP, error) {
+	ctx, span := c.tracer.Start(ctx, "notification:"+path)
+	defer span.End()
+
 	var empty RP
 
 	request := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(request)
+
 	request.SetRequestURI(c.addr + path)
 	request.Header.SetMethod(fasthttp.MethodPost)
 	request.Header.SetContentType(ContentType)
 	request.Header.Set("Authorization", c.token)
 	request.Header.Set("X-Client-Name", c.name)
 
-	// FIXME: поддержать телеметрию, использовать более быстрые библиотеки для json
+	otel.GetTextMapPropagator().Inject(ctx, &headerWraper{
+		raw: &request.Header,
+	})
+
+	// FIXME: использовать более быстрые библиотеки для json
 
 	err := marshal(request.BodyWriter(), reqV)
 	if err != nil {
@@ -52,8 +62,9 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 
 	err = c.client.DoTimeout(request, resp, time.Second)
 
-	fasthttp.ReleaseRequest(request)
 	defer fasthttp.ReleaseResponse(resp)
+
+	defer logData(ctx, c.logger, request, resp)
 
 	if err != nil {
 		return empty, fmt.Errorf("%w: request: %w", ErrProcess, err)

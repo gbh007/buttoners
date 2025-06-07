@@ -4,16 +4,15 @@ go 1.24.2
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.34.0
-	github.com/gbh007/buttoners/core v0.0.0-20250511094131-82724984e1d9
-	github.com/gbh007/buttoners/services/handler v0.0.0-20250508141616-821618a58fde
+	github.com/gbh007/buttoners/core v0.0.0-20250607085240-efb15f1b2429
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mailru/go-clickhouse/v2 v2.5.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/uptrace/opentelemetry-go-extra/otelsqlx v0.3.2
 	github.com/vrischmann/envconfig v1.4.1
-	go.opentelemetry.io/otel v1.35.0
-	go.opentelemetry.io/otel/trace v1.35.0
+	go.opentelemetry.io/otel v1.36.0
+	go.opentelemetry.io/otel/trace v1.36.0
 )
 
 require (
@@ -45,8 +44,8 @@ require (
 	github.com/valyala/fasthttp v1.62.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0 // indirect
-	go.opentelemetry.io/otel/metric v1.35.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.35.0 // indirect
+	go.opentelemetry.io/otel/metric v1.36.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect

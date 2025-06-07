@@ -1,47 +1,65 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/services/notification/internal/storage"
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type server struct {
-	db    *storage.Database
-	token string
+	db     *storage.Database
+	token  string
+	tracer trace.Tracer
+	logger *slog.Logger
 }
 
-func (s *server) handle(ctx *fasthttp.RequestCtx) {
-	ctx.SetContentType(notificationclient.ContentType)
+func (s *server) handle(rc *fasthttp.RequestCtx) {
+	var ctx context.Context = rc
 
-	if !ctx.IsPost() {
-		ctx.SetStatusCode(http.StatusNotFound)
-		marshal(ctx, notificationclient.ErrorResponse{
+	// Распространение трассировки
+	ctx = otel.GetTextMapPropagator().Extract(ctx, &headerWraper{
+		raw: &rc.Request.Header,
+	})
+
+	ctx, span := s.tracer.Start(ctx, "notification-server:"+string(rc.Path()))
+	defer span.End()
+
+	defer logData(ctx, s.logger, &rc.Request, &rc.Response)
+
+	rc.SetContentType(notificationclient.ContentType)
+
+	if !rc.IsPost() {
+		rc.SetStatusCode(http.StatusNotFound)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "not found",
-			Details: string(ctx.Method()),
+			Details: string(rc.Method()),
 		})
 
 		return
 	}
 
-	// FIXME: поддержать телеметрию, использовать более быстрые библиотеки для json
+	// FIXME: использовать более быстрые библиотеки для json
 
-	p := string(ctx.Path())
+	p := string(rc.Path())
 
 	switch p {
 	case notificationclient.NewPath:
-		s.New(ctx)
+		s.New(ctx, rc)
 	case notificationclient.ListPath:
-		s.List(ctx)
+		s.List(ctx, rc)
 	case notificationclient.ReadPath:
-		s.Read(ctx)
+		s.Read(ctx, rc)
 	default:
-		ctx.SetStatusCode(http.StatusNotFound)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusNotFound)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "not found",
 			Details: p,
 		})

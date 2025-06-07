@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net"
+	"os"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/clients/gateclient/gen/pb"
@@ -13,12 +15,15 @@ import (
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/redis"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 )
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 	const serviceName = "gate-service"
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
 	if err != nil {
@@ -36,7 +41,10 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer redisClient.Close()
 
-	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, serviceName)
+	notificationClient, err := notificationclient.New(
+		logger, otel.GetTracerProvider().Tracer("notification-client"),
+		cfg.NotificationService.Addr, cfg.NotificationService.Token, serviceName,
+	)
 	if err != nil {
 		return err
 	}

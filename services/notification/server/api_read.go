@@ -1,17 +1,18 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/valyala/fasthttp"
 )
 
-func (s *server) Read(ctx *fasthttp.RequestCtx) {
-	req, err := unmarshal[notificationclient.ReadRequest](ctx.Request.Body())
+func (s *server) Read(ctx context.Context, rc *fasthttp.RequestCtx) {
+	req, err := unmarshal[notificationclient.ReadRequest](rc.Request.Body())
 	if err != nil {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "unmarshal",
 			Details: err.Error(),
 		})
@@ -20,8 +21,8 @@ func (s *server) Read(ctx *fasthttp.RequestCtx) {
 	}
 
 	if req.UserID < 1 {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "validation",
 			Details: "user id",
 		})
@@ -36,8 +37,8 @@ func (s *server) Read(ctx *fasthttp.RequestCtx) {
 	}
 
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusInternalServerError)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "logic",
 			Details: err.Error(),
 		})
@@ -45,5 +46,5 @@ func (s *server) Read(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	ctx.SetStatusCode(http.StatusNoContent)
+	rc.SetStatusCode(http.StatusNoContent)
 }

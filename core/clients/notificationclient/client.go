@@ -2,28 +2,38 @@ package notificationclient
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Client struct {
+	logger *slog.Logger
+	tracer trace.Tracer
 	client *fasthttp.Client
 	addr   string
 	token  string
 	name   string
 }
 
-func New(addr, token, name string) (*Client, error) {
+func New(
+	logger *slog.Logger,
+	tracer trace.Tracer,
+	addr, token, name string,
+) (*Client, error) {
 	c := &Client{
 		client: &fasthttp.Client{
 			Transport:    fasthttp.DefaultTransport,
 			ReadTimeout:  time.Second,
 			WriteTimeout: time.Second,
 		},
-		addr:  strings.TrimRight(addr, "/"),
-		token: token,
+		addr:   strings.TrimRight(addr, "/"),
+		token:  token,
+		logger: logger,
+		tracer: tracer,
 	}
 
 	return c, nil

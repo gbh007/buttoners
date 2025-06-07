@@ -1,17 +1,18 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/valyala/fasthttp"
 )
 
-func (s *server) List(ctx *fasthttp.RequestCtx) {
-	req, err := unmarshal[notificationclient.ListRequest](ctx.Request.Body())
+func (s *server) List(ctx context.Context, rc *fasthttp.RequestCtx) {
+	req, err := unmarshal[notificationclient.ListRequest](rc.Request.Body())
 	if err != nil {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "unmarshal",
 			Details: err.Error(),
 		})
@@ -20,8 +21,8 @@ func (s *server) List(ctx *fasthttp.RequestCtx) {
 	}
 
 	if req.UserID < 1 {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "validation",
 			Details: "user id",
 		})
@@ -31,8 +32,8 @@ func (s *server) List(ctx *fasthttp.RequestCtx) {
 
 	rawNotifications, err := s.db.GetNotificationsByUserID(ctx, req.UserID)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusInternalServerError)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "logic",
 			Details: err.Error(),
 		})
@@ -53,8 +54,8 @@ func (s *server) List(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	ctx.SetStatusCode(http.StatusOK)
-	marshal(ctx, notificationclient.ListResponse{
+	rc.SetStatusCode(http.StatusOK)
+	marshal(rc, notificationclient.ListResponse{
 		Notifications: notifications,
 	})
 }

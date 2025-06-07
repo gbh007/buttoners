@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
 
@@ -9,11 +10,11 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func (s *server) New(ctx *fasthttp.RequestCtx) {
-	req, err := unmarshal[notificationclient.NewRequest](ctx.Request.Body())
+func (s *server) New(ctx context.Context, rc *fasthttp.RequestCtx) {
+	req, err := unmarshal[notificationclient.NewRequest](rc.Request.Body())
 	if err != nil {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "unmarshal",
 			Details: err.Error(),
 		})
@@ -22,8 +23,8 @@ func (s *server) New(ctx *fasthttp.RequestCtx) {
 	}
 
 	if req.UserID < 1 {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusBadRequest)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "validation",
 			Details: "user id",
 		})
@@ -43,8 +44,8 @@ func (s *server) New(ctx *fasthttp.RequestCtx) {
 		Created: req.Created,
 	})
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		marshal(ctx, notificationclient.ErrorResponse{
+		rc.SetStatusCode(http.StatusInternalServerError)
+		marshal(rc, notificationclient.ErrorResponse{
 			Code:    "logic",
 			Details: err.Error(),
 		})
@@ -52,5 +53,5 @@ func (s *server) New(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	ctx.SetStatusCode(http.StatusNoContent)
+	rc.SetStatusCode(http.StatusNoContent)
 }

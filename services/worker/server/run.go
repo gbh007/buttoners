@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
@@ -15,6 +17,8 @@ import (
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
@@ -32,7 +36,10 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer rabbitClient.Close()
 
-	notificationClient, err := notificationclient.New(cfg.NotificationService.Addr, cfg.NotificationService.Token, "worker-service")
+	notificationClient, err := notificationclient.New(
+		logger, otel.GetTracerProvider().Tracer("notification-client"),
+		cfg.NotificationService.Addr, cfg.NotificationService.Token, "worker-service",
+	)
 	if err != nil {
 		return err
 	}
