@@ -9,9 +9,9 @@ import (
 	"github.com/gbh007/buttoners/core/clients/gateclient/gen/pb"
 	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/redis"
-	"github.com/gbh007/buttoners/services/gate/dto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

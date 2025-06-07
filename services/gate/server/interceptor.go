@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/gateclient"
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/metrics"
-	"github.com/gbh007/buttoners/services/gate/dto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"

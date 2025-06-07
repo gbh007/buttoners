@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/rabbitmq"
-	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
 	"go.opentelemetry.io/otel"
@@ -21,7 +21,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	rabbitClient := rabbitmq.New[handlerdto.RabbitMQData](
+	rabbitClient := rabbitmq.New[dto.RabbitMQData](
 		cfg.RabbitMQ.Username, cfg.RabbitMQ.Password, cfg.RabbitMQ.Addr, cfg.RabbitMQ.QueueName,
 	)
 

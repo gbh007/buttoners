@@ -4,9 +4,7 @@ import (
 	"context"
 	"log"
 
-	gatedto "github.com/gbh007/buttoners/services/gate/dto"
-	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
-
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/rabbitmq"
@@ -25,7 +23,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer kafkaClient.Close()
 
-	rabbitClient := rabbitmq.New[handlerdto.RabbitMQData](
+	rabbitClient := rabbitmq.New[dto.RabbitMQData](
 		cfg.RabbitMQ.Username, cfg.RabbitMQ.Password, cfg.RabbitMQ.Addr, cfg.RabbitMQ.QueueName,
 	)
 
@@ -42,7 +40,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 label1:
 	for {
-		data := new(gatedto.KafkaTaskData)
+		data := new(dto.KafkaTaskData)
 		ctx, key, err := kafkaClient.Read(ctx, data)
 		if err != nil {
 			log.Println(err.Error())

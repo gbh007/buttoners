@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
-	"github.com/gbh007/buttoners/services/gate/dto"
+	"github.com/gbh007/buttoners/core/dto"
 )
 
 const cacheTTL = time.Minute * 5

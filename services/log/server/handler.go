@@ -6,8 +6,7 @@ import (
 	"log"
 	"time"
 
-	gatedto "github.com/gbh007/buttoners/services/gate/dto"
-
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
 	"go.opentelemetry.io/otel/codes"
@@ -25,7 +24,7 @@ type handler struct {
 func (h *handler) Run(ctx context.Context) error {
 label1:
 	for {
-		data := new(gatedto.KafkaLogData)
+		data := new(dto.KafkaLogData)
 		ctx, key, err := h.kafka.Read(ctx, data)
 		if err != nil {
 			log.Println(err.Error())
@@ -44,7 +43,7 @@ label1:
 	return nil
 }
 
-func (h *handler) handle(ctx context.Context, key string, data *gatedto.KafkaLogData) {
+func (h *handler) handle(ctx context.Context, key string, data *dto.KafkaLogData) {
 	ctx, span := h.tracer.Start(ctx, "handle msg")
 	defer span.End()
 

@@ -5,9 +5,7 @@ import (
 	"log"
 	"time"
 
-	gatedto "github.com/gbh007/buttoners/services/gate/dto"
-	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
-
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -18,8 +16,8 @@ type handler struct {
 }
 
 func (h *handler) handle(
-	ctx context.Context, key string, data *gatedto.KafkaTaskData,
-	rabbitClient *rabbitmq.Client[handlerdto.RabbitMQData],
+	ctx context.Context, key string, data *dto.KafkaTaskData,
+	rabbitClient *rabbitmq.Client[dto.RabbitMQData],
 ) {
 	ctx, span := h.tracer.Start(ctx, "handle msg")
 	defer span.End()
@@ -31,7 +29,7 @@ func (h *handler) handle(
 	rabbitCtx, rabbitCnl := context.WithTimeout(ctx, time.Second*10)
 	defer rabbitCnl()
 
-	err := rabbitClient.Write(rabbitCtx, handlerdto.RabbitMQData{
+	err := rabbitClient.Write(rabbitCtx, dto.RabbitMQData{
 		RequestID: key,
 		UserID:    data.UserID,
 		Chance:    data.Chance,

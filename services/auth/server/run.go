@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/redis"
 	"github.com/gbh007/buttoners/services/auth/internal/storage"
-	"github.com/gbh007/buttoners/services/gate/dto"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"

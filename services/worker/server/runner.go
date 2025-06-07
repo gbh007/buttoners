@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/rabbitmq"
-	handlerdto "github.com/gbh007/buttoners/services/handler/dto"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
 	"go.opentelemetry.io/otel/codes"
@@ -20,7 +20,7 @@ type runner struct {
 
 	notification *notificationclient.Client
 	db           *storage.Database
-	queue        chan rabbitmq.Read[handlerdto.RabbitMQData]
+	queue        chan rabbitmq.Read[dto.RabbitMQData]
 }
 
 func (r *runner) run(ctx context.Context) {
@@ -37,7 +37,7 @@ func (r *runner) run(ctx context.Context) {
 	}
 }
 
-func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[handlerdto.RabbitMQData]) {
+func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.RabbitMQData]) {
 	activeTaskTotal.Inc()
 	defer activeTaskTotal.Dec()
 

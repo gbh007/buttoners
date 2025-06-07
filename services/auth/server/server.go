@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/redis"
 	"github.com/gbh007/buttoners/services/auth/internal/storage"
-	"github.com/gbh007/buttoners/services/gate/dto"
 )
 
 type server struct {
