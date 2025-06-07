@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/gbh007/buttoners/core/clients/gateclient"
 	"github.com/gbh007/buttoners/ui/console/internal/view/components"
 )
 
@@ -68,15 +69,27 @@ func (m Registration) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Batch(
 					cmd,
 					func() tea.Msg {
-						err := m.shared.GateClient.Register(
+						c, err := gateclient.New(values[0])
+						if err != nil {
+							return RegistrationEvent{
+								err: err,
+							}
+						}
+
+						err = c.Register(
 							m.shared.Ctx,
 							values[1],
 							values[2],
 						)
-
-						return RegistrationEvent{
-							err: err,
+						if err != nil {
+							return RegistrationEvent{
+								err: err,
+							}
 						}
+
+						m.shared.GateClient = c
+
+						return RegistrationEvent{}
 					},
 				)
 			}

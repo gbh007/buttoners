@@ -4,14 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gbh007/buttoners/core/clients/logclient"
-	"github.com/gbh007/buttoners/services/log/internal/pb"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
 	"github.com/gofiber/fiber/v2"
 )
 
 type pbServer struct {
-	pb.UnimplementedLogServer
-
 	db *storage.Database
 }
 

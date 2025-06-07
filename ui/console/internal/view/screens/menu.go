@@ -63,20 +63,6 @@ func NewMenu(shared *SharedState) Menu {
 		items = append(
 			items,
 			menuItem{
-				Name: "Storage debug",
-				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
-					screen := NewStorageDebug(shared)
-					return screen, screen.Init()
-				},
-			},
-			menuItem{
-				Name: "Gate debug",
-				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
-					screen := NewGateDebug(shared)
-					return screen, screen.Init()
-				},
-			},
-			menuItem{
 				Name: "Button",
 				ScreenConstructor: func(shared *SharedState) (tea.Model, tea.Cmd) {
 					screen := NewMainButton(shared)
