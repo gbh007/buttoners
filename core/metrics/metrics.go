@@ -24,6 +24,8 @@ const (
 var (
 	DefaultRegistry = prometheus.NewRegistry()
 
+	DefaultTimeBuckets = []float64{0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1, 1.5, 2}
+
 	requestTime = promauto.With(DefaultRegistry).NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: MetricsNamespace,
 		Subsystem: subsystemName,

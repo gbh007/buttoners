@@ -29,18 +29,24 @@ func Run(ctx context.Context, cfg Config) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	tracer := otel.GetTracerProvider().Tracer("notification-server")
 
+	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
 	}
 
 	s := &server{
-		db:     db,
-		token:  cfg.SelfToken,
-		tracer: tracer,
-		logger: logger,
+		db:      db,
+		token:   cfg.SelfToken,
+		tracer:  tracer,
+		logger:  logger,
+		metrics: httpServerMetrics,
 	}
-	// FIXME: добавить логирование и авторизацию
+	// FIXME: добавить авторизацию
 	server := &fasthttp.Server{
 		Handler: s.handle,
 	}

@@ -6,22 +6,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type Client struct {
-	logger *slog.Logger
-	tracer trace.Tracer
-	client *fasthttp.Client
-	addr   string
-	token  string
-	name   string
+	logger  *slog.Logger
+	tracer  trace.Tracer
+	client  *fasthttp.Client
+	metrics *metrics.HTTPClientMetrics
+	addr    string
+	token   string
+	name    string
 }
 
 func New(
 	logger *slog.Logger,
 	tracer trace.Tracer,
+	metrics *metrics.HTTPClientMetrics,
 	addr, token, name string,
 ) (*Client, error) {
 	c := &Client{
@@ -30,10 +33,11 @@ func New(
 			ReadTimeout:  time.Second,
 			WriteTimeout: time.Second,
 		},
-		addr:   strings.TrimRight(addr, "/"),
-		token:  token,
-		logger: logger,
-		tracer: tracer,
+		addr:    strings.TrimRight(addr, "/"),
+		token:   token,
+		logger:  logger,
+		tracer:  tracer,
+		metrics: metrics,
 	}
 
 	return c, nil

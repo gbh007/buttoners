@@ -6,8 +6,10 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
+	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/services/notification/internal/storage"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
@@ -15,13 +17,23 @@ import (
 )
 
 type server struct {
-	db     *storage.Database
-	token  string
-	tracer trace.Tracer
-	logger *slog.Logger
+	db      *storage.Database
+	token   string
+	tracer  trace.Tracer
+	logger  *slog.Logger
+	metrics *metrics.HTTPServerMetrics
 }
 
 func (s *server) handle(rc *fasthttp.RequestCtx) {
+	tStart := time.Now()
+
+	s.metrics.IncActive(string(rc.Request.Host()), string(rc.Request.URI().Path()), string(rc.Request.Header.Method()))
+	defer s.metrics.DecActive(string(rc.Request.Host()), string(rc.Request.URI().Path()), string(rc.Request.Header.Method()))
+
+	defer func() {
+		s.metrics.AddHandle(string(rc.Request.Host()), string(rc.Request.URI().Path()), string(rc.Request.Header.Method()), rc.Response.StatusCode(), time.Since(tStart))
+	}()
+
 	var ctx context.Context = rc
 
 	// Распространение трассировки

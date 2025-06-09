@@ -33,6 +33,8 @@ func unmarshal[T any](data []byte) (T, error) {
 }
 
 func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (RP, error) {
+	tStart := time.Now()
+
 	ctx, span := c.tracer.Start(ctx, "notification:"+path)
 	defer span.End()
 
@@ -51,6 +53,10 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 		raw: &request.Header,
 	})
 
+	// TODO: метрики в RoundTripper?
+	c.metrics.IncActive(string(request.Host()), string(request.URI().Path()), string(request.Header.Method()))
+	defer c.metrics.DecActive(string(request.Host()), string(request.URI().Path()), string(request.Header.Method()))
+
 	// FIXME: использовать более быстрые библиотеки для json
 
 	err := marshal(request.BodyWriter(), reqV)
@@ -63,6 +69,10 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 	err = c.client.DoTimeout(request, resp, time.Second)
 
 	defer fasthttp.ReleaseResponse(resp)
+
+	defer func() {
+		c.metrics.AddHandle(string(request.Host()), string(request.URI().Path()), string(request.Header.Method()), resp.StatusCode(), time.Since(tStart))
+	}()
 
 	defer logData(ctx, c.logger, request, resp)
 

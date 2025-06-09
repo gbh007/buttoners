@@ -25,6 +25,11 @@ func Run(ctx context.Context, cfg Config) error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
+	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
 	if err != nil {
 		return err
@@ -42,7 +47,7 @@ func Run(ctx context.Context, cfg Config) error {
 	defer redisClient.Close()
 
 	notificationClient, err := notificationclient.New(
-		logger, otel.GetTracerProvider().Tracer("notification-client"),
+		logger, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
 		cfg.NotificationService.Addr, cfg.NotificationService.Token, serviceName,
 	)
 	if err != nil {

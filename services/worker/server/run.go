@@ -20,6 +20,11 @@ func Run(ctx context.Context, cfg Config) error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
+	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
@@ -37,7 +42,7 @@ func Run(ctx context.Context, cfg Config) error {
 	defer rabbitClient.Close()
 
 	notificationClient, err := notificationclient.New(
-		logger, otel.GetTracerProvider().Tracer("notification-client"),
+		logger, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
 		cfg.NotificationService.Addr, cfg.NotificationService.Token, "worker-service",
 	)
 	if err != nil {
