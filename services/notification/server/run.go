@@ -27,6 +27,8 @@ func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
+
 	tracer := otel.GetTracerProvider().Tracer("notification-server")
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)

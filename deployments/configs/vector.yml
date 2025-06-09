@@ -15,43 +15,18 @@ transforms:
     inputs:
       - docker
     source: |
+      .host = "buttoners stand"
+      .job = "dockerlogs"
+
       message, err = parse_json(.message)
       if (err == null) {
-        if exists(message.msg) {
-          .msg = message.msg
-          del(message.msg)
-          .message = message
-        } else if exists(message.message) {
-          .msg = message.message
-          del(message.message)
-          .message = message
-        } else {
-          .msg = .message
-          del(.message)
+        if exists(message.trace_id) {
+          .trace_id = message.trace_id
         }
-      } else {
-        message, err = parse_key_value(.message)
-        if (err == null) {
-          if exists(message.msg) {
-            .msg = message.msg
-            del(message.msg)
-            .message = message
-          } else if exists(message.message) {
-            .msg = message.message
-            del(message.message)
-            .message = message
-          } else {
-            .msg = .message
-            del(.message)
-          }
-        } else {
-          .msg = .message
-          del(.message)
+        if exists(message.service_name) {
+          .service_name = message.service_name
         }
       }
-      .host = "buttoners stand"
-      .service_name = .container_name
-      .job = "dockerlogs"
 
 sinks:
   http_docker:
@@ -71,5 +46,5 @@ sinks:
         AccountID: "0"
         ProjectID: "0"
         VL-Stream-Fields: source_type,host,container_name,label.com.docker.compose.service
-        VL-Msg-Field: msg
+        VL-Msg-Field: message
         VL-Time-Field: timestamp

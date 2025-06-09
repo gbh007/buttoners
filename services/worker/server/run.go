@@ -19,6 +19,7 @@ func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {

@@ -24,6 +24,7 @@ func Run(ctx context.Context, cfg Config) error {
 	const serviceName = "gate-service"
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
