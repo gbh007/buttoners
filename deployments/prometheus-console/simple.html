@@ -4,13 +4,13 @@
 <tr>
     <td>To Handle</td>
     <td>
-        {{ template "prom_query_drilldown" (args "sum(petus_projectus_handler_handle_time_count) - sum(petus_projectus_worker_handle_time_count)") }}
+        {{ template "prom_query_drilldown" (args "sum(buttoners_handler_handle_time_count) - sum(buttoners_worker_handle_time_count)") }}
     </td>
 </tr>
 <tr>
     <td>RPM (gate)</td>
     <td>
-        {{ template "prom_query_drilldown" (args "round(sum(rate(petus_projectus_protobuf_request_duration_count{instance=\"gate\"}[1m])))") }}
+        {{ template "prom_query_drilldown" (args "round(sum(rate(buttoners_protobuf_request_duration_count{instance=\"gate\"}[1m])))") }}
     </td>
 </tr>
 {{template "prom_right_table_tail"}}
@@ -81,16 +81,16 @@
         })
     }
 
-    simpleDuration("#protobufGraph", "sum by (instance) (rate(petus_projectus_protobuf_request_duration_sum[1m])) / sum by(instance) (rate(petus_projectus_protobuf_request_duration_count[1m]))")
+    simpleDuration("#protobufGraph", "sum by (instance) (rate(buttoners_protobuf_request_duration_sum[1m])) / sum by(instance) (rate(buttoners_protobuf_request_duration_count[1m]))")
 
-    simpleDuration("#businessGraph", "sum by (instance) (rate(petus_projectus_worker_business_handle_time_sum[1m]))/sum by(instance) (rate(petus_projectus_worker_business_handle_time_count[1m]))")
+    simpleDuration("#businessGraph", "sum by (instance) (rate(buttoners_worker_business_handle_time_sum[1m]))/sum by(instance) (rate(buttoners_worker_business_handle_time_count[1m]))")
 
-    simpleDuration("#kafkaReadGraph", "sum by (instance) (rate(petus_projectus_kafka_read_handle_time_sum[1m])) / sum by(instance) (rate(petus_projectus_kafka_read_handle_time_count[1m]))")
-    simpleDuration("#kafkaWriteGraph", "sum by (instance) (rate(petus_projectus_kafka_write_handle_time_sum[1m])) / sum by(instance) (rate(petus_projectus_kafka_write_handle_time_count[1m]))")
+    simpleDuration("#kafkaReadGraph", "sum by (instance) (rate(buttoners_kafka_read_handle_time_sum[1m])) / sum by(instance) (rate(buttoners_kafka_read_handle_time_count[1m]))")
+    simpleDuration("#kafkaWriteGraph", "sum by (instance) (rate(buttoners_kafka_write_handle_time_sum[1m])) / sum by(instance) (rate(buttoners_kafka_write_handle_time_count[1m]))")
 
-    simpleDuration("#rabbitMQReadGraph", "sum by (instance) (rate(petus_projectus_rabbitmq_read_handle_time_sum[1m])) / sum by(instance) (rate(petus_projectus_rabbitmq_read_handle_time_count[1m]))")
+    simpleDuration("#rabbitMQReadGraph", "sum by (instance) (rate(buttoners_rabbitmq_read_handle_time_sum[1m])) / sum by(instance) (rate(buttoners_rabbitmq_read_handle_time_count[1m]))")
 
-    simpleDuration("#rabbitMQWriteGraph", "sum by (instance) (rate(petus_projectus_rabbitmq_write_handle_time_sum[1m])) / sum by(instance) (rate(petus_projectus_rabbitmq_write_handle_time_count[1m]))")
+    simpleDuration("#rabbitMQWriteGraph", "sum by (instance) (rate(buttoners_rabbitmq_write_handle_time_sum[1m])) / sum by(instance) (rate(buttoners_rabbitmq_write_handle_time_count[1m]))")
 </script>
 
 {{template "prom_content_tail" .}}

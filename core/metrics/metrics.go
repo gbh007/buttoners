@@ -14,7 +14,7 @@ const (
 	hostLabelName     = "host"
 	instanceLabelName = "instance"
 
-	MetricsNamespace = "petus_projectus"
+	MetricsNamespace = "buttoners"
 	subsystemName    = "protobuf"
 
 	resultOK   = "ok"

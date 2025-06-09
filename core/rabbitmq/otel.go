@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const tracerName = "petus-projectus/rabbitmq"
+const tracerName = "buttoners/rabbitmq"
 
 func toMapCarrier(in amqp091.Table) propagation.MapCarrier {
 	out := make(map[string]string, len(in))

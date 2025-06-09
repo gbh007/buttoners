@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const tracerName = "petus-projectus/kafka"
+const tracerName = "buttoners/kafka"
 
 func toMapCarrier(in []kafka.Header) propagation.MapCarrier {
 	out := make(map[string]string, len(in))
