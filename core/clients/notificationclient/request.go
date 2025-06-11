@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
 )
@@ -74,7 +75,7 @@ func request[RQ, RP any](ctx context.Context, c *Client, path string, reqV RQ) (
 		c.metrics.AddHandle(string(request.Host()), string(request.URI().Path()), string(request.Header.Method()), resp.StatusCode(), time.Since(tStart))
 	}()
 
-	defer logData(ctx, c.logger, request, resp)
+	defer observability.LogFastHTTPData(ctx, c.logger, "notification client request", request, resp)
 
 	if err != nil {
 		return empty, fmt.Errorf("%w: request: %w", ErrProcess, err)

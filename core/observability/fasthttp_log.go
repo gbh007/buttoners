@@ -1,4 +1,4 @@
-package notificationclient
+package observability
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func logData(ctx context.Context, logger *slog.Logger, request *fasthttp.Request, resp *fasthttp.Response) {
+func LogFastHTTPData(ctx context.Context, logger *slog.Logger, msg string, request *fasthttp.Request, resp *fasthttp.Response) {
 	rqLog := []any{}
 
 	if request != nil {
@@ -16,6 +16,7 @@ func logData(ctx context.Context, logger *slog.Logger, request *fasthttp.Request
 			rqLog,
 			slog.String("host", string(request.Host())),
 			slog.String("path", string(request.URI().Path())),
+			slog.String("method", string(request.Header.Method())),
 			slog.String("body", string(request.Body())),
 		)
 
@@ -65,7 +66,7 @@ func logData(ctx context.Context, logger *slog.Logger, request *fasthttp.Request
 	}
 
 	logger.InfoContext(
-		ctx, "notification client request",
+		ctx, msg,
 		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
 		slog.Group("request", rqLog...),
 		slog.Group("response", rpLog...),

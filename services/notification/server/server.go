@@ -10,6 +10,7 @@ import (
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/services/notification/internal/storage"
 	"github.com/valyala/fasthttp"
 	"go.opentelemetry.io/otel"
@@ -44,7 +45,7 @@ func (s *server) handle(rc *fasthttp.RequestCtx) {
 	ctx, span := s.tracer.Start(ctx, "notification-server:"+string(rc.Path()))
 	defer span.End()
 
-	defer logData(ctx, s.logger, &rc.Request, &rc.Response)
+	defer observability.LogFastHTTPData(ctx, s.logger, "notification server request", &rc.Request, &rc.Response)
 
 	rc.SetContentType(notificationclient.ContentType)
 
