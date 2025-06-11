@@ -57,7 +57,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer notificationClient.Close()
 
-	logClient, err := logclient.New(logger, httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, serviceName)
+	logClient, err := logclient.New(logger, otel.GetTracerProvider().Tracer("log-client"), httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, serviceName)
 	if err != nil {
 		return err
 	}

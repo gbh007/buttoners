@@ -3,13 +3,12 @@ package logclient
 import (
 	"context"
 	"log/slog"
-	"net/http"
 	"strings"
 
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/observability"
 	"github.com/imroc/req/v3"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Client struct {
@@ -19,26 +18,21 @@ type Client struct {
 	name   string
 }
 
-func New(logger *slog.Logger, metrics *metrics.HTTPClientMetrics, addr, token, name string) (*Client, error) {
+func New(logger *slog.Logger, tracer trace.Tracer, metrics *metrics.HTTPClientMetrics, addr, token, name string) (*Client, error) {
 	c := &Client{
 		addr:  strings.TrimRight(addr, "/"),
 		token: token,
 		name:  name,
 	}
 
-	client := req.C()
-
-	client.Transport = req.T().WrapRoundTrip(func(rt http.RoundTripper) http.RoundTripper {
-		return observability.NewHTTPTransport(logger, metrics, otelhttp.NewTransport(rt), "log")
-	})
-
-	client = client.
+	c.client = req.C().
 		SetBaseURL(c.addr).
+		WrapRoundTrip(func(rt req.RoundTripper) req.RoundTripper {
+			return observability.NewImroqReqRT(logger, metrics, tracer, rt, "log")
+		}).
 		SetCommonHeader("Authorization", c.token).
 		SetCommonHeader("X-Client-Name", c.name).
 		SetCommonHeader("Content-Type", ContentType)
-
-	c.client = client
 
 	return c, nil
 }

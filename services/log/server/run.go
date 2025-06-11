@@ -44,7 +44,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	fb := fiber.New()
-	fb.All("*", otelfiber.Middleware(
+	fb.All("*", otelfiber.Middleware( // FIXME: исправить работу с мидлварями
 		otelfiber.WithoutMetrics(true),
 	))
 	fb.All("*", func(ctx *fiber.Ctx) error {
