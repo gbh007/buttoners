@@ -2,9 +2,12 @@ package logclient
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/imroc/req/v3"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -16,7 +19,7 @@ type Client struct {
 	name   string
 }
 
-func New(addr, token, name string) (*Client, error) {
+func New(logger *slog.Logger, metrics *metrics.HTTPClientMetrics, addr, token, name string) (*Client, error) {
 	c := &Client{
 		addr:  strings.TrimRight(addr, "/"),
 		token: token,
@@ -26,7 +29,7 @@ func New(addr, token, name string) (*Client, error) {
 	client := req.C()
 
 	client.Transport = req.T().WrapRoundTrip(func(rt http.RoundTripper) http.RoundTripper {
-		return otelhttp.NewTransport(rt)
+		return observability.NewHTTPTransport(logger, metrics, otelhttp.NewTransport(rt), "log")
 	})
 
 	client = client.

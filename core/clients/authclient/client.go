@@ -2,10 +2,13 @@ package authclient
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -16,10 +19,10 @@ type Client struct {
 	name   string
 }
 
-func New(addr, token, name string) (*Client, error) {
+func New(logger *slog.Logger, metrics *metrics.HTTPClientMetrics, addr, token, name string) (*Client, error) {
 	c := &Client{
 		client: &http.Client{
-			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Transport: observability.NewHTTPTransport(logger, metrics, otelhttp.NewTransport(http.DefaultTransport), "auth"),
 			Timeout:   time.Second,
 		},
 		addr:  strings.TrimRight(addr, "/"),

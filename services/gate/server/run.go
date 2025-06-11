@@ -31,7 +31,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	authClient, err := authclient.New(cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
+	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer notificationClient.Close()
 
-	logClient, err := logclient.New(cfg.LogService.Addr, cfg.LogService.Token, serviceName)
+	logClient, err := logclient.New(logger, httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, serviceName)
 	if err != nil {
 		return err
 	}
