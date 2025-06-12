@@ -27,7 +27,7 @@ func (s *pbServer) Activity(c *fiber.Ctx) error {
 			})
 	}
 
-	count, last, err := s.db.SelectCompressedUserLogByUserID(c.Context(), req.UserID)
+	count, last, err := s.db.SelectCompressedUserLogByUserID(c.UserContext(), req.UserID)
 	if err != nil {
 		c.Set(fiber.HeaderContentType, logclient.ContentType)
 

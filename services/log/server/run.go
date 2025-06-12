@@ -3,13 +3,16 @@ package server
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
 	"github.com/gofiber/contrib/otelfiber/v2"
 	"github.com/gofiber/fiber/v2"
@@ -18,6 +21,14 @@ import (
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
+
+	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
 
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
@@ -44,10 +55,24 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	fb := fiber.New()
-	fb.All("*", otelfiber.Middleware( // FIXME: исправить работу с мидлварями
+	otelHandler := otelfiber.Middleware(
 		otelfiber.WithoutMetrics(true),
-	))
-	fb.All("*", func(ctx *fiber.Ctx) error {
+	)
+	observabilityHandler := func(ctx *fiber.Ctx) error {
+		tStart := time.Now()
+
+		httpServerMetrics.IncActive(string(ctx.Request().Host()), string(ctx.Request().URI().Path()), string(ctx.Request().Header.Method()))
+		defer httpServerMetrics.DecActive(string(ctx.Request().Host()), string(ctx.Request().URI().Path()), string(ctx.Request().Header.Method()))
+
+		defer func() {
+			httpServerMetrics.AddHandle(string(ctx.Request().Host()), string(ctx.Request().URI().Path()), string(ctx.Request().Header.Method()), ctx.Response().StatusCode(), time.Since(tStart))
+		}()
+
+		defer observability.LogFastHTTPData(ctx.UserContext(), logger, "log server request", ctx.Request(), ctx.Response())
+
+		return ctx.Next()
+	}
+	authHandler := func(ctx *fiber.Ctx) error {
 		token := string(ctx.Request().Header.Peek("Authorization"))
 
 		if token == "" {
@@ -73,9 +98,9 @@ func Run(ctx context.Context, cfg Config) error {
 		}
 
 		return ctx.Next()
-	})
+	}
 
-	fb.Post(logclient.ActivityPath, server.Activity)
+	fb.Post(logclient.ActivityPath, otelHandler, observabilityHandler, authHandler, server.Activity)
 
 	go func() {
 		<-ctx.Done()
