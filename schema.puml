@@ -1,0 +1,92 @@
+@startuml C4_Elements
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+
+Person(user, "User", "Кнопочный нажиматор")
+Person(admin, "Admin", "Кнопочный админ")
+
+System_Boundary(docker, "Docker") {
+    ' Observability
+    Container_Ext(jaeger, "Jaeger", "Go", "Хранит трассировку", $link="http://localhost:16686")
+    Container_Ext(vector, "Vector", "Rust", "Обрабатывает от сервисов")
+    Container_Ext(prompgw, "Prom push GW", "Go", "Принимает метрики от сервисов")
+    Container_Ext(victorialogs, "Victoria Logs", "Go", "Хранит логи", $link="http://localhost:9428")
+    Container_Ext(victoriametrics, "Victoria Metrics", "Go", "Собирает и хранит метрики", $link="http://localhost:8428")
+    Container_Ext(grafana, "Grafana", "Go", "Визуализирует метрики и логи", $link="http://localhost:3000")
+    ' Database
+    ContainerDb(redis, "Redis", "redis")
+    ContainerDb(clickhouse, "ClickHouse", "clickhouse")
+    ContainerDb(mariadb, "MariaDB", "mariadb")
+    ' Queues
+    ContainerQueue(kafka, "Kafka", "kafka")
+    ContainerQueue(rabbitmq, "RabbitMQ", "rabbitmq")
+    ' Services
+    Container(gate, "Gate", "Go", "API Gateway")
+    Container(auth, "Auth", "Go", "Данные пользователя и сессий")
+    Container(handler, "Handler", "Go", "Обработка очереди нажатий кнопки")
+    Container(log, "Log", "Go", "Информация о действия пользователя")
+    Container(notification, "Notification", "Go", "Уведомления")
+    Container(worker, "Worker", "Go", "Обработчик бизнес логики")
+}
+
+Container(console, "Console UI", "Go")
+
+Rel(user, console, "Взаимодействие с приложением")
+Rel(console, gate, "Взаимодействие с сервером", "gRPC")
+
+
+Rel(gate, redis, "Кеш сессии")
+Rel(auth, redis, "Кеш сессии")
+
+Rel(auth, mariadb, "auth DB")
+Rel(notification, mariadb, "notification DB")
+
+Rel(log, clickhouse, "log DB")
+Rel(worker, clickhouse, "task DB")
+
+Rel(gate, kafka, "send topic", "gate")
+Rel(gate, kafka, "send topic", "log")
+
+
+Rel(handler, kafka, "read topic", "gate")
+Rel(log, kafka, "read topic", "log")
+
+Rel(handler, rabbitmq, "send queue", "task")
+Rel(worker, rabbitmq, "read queue", "task")
+
+Rel(gate, log, "Получение активности пользователя", "HTTP / JSON RPC")
+Rel(gate, notification, "Работа с уведомлениями пользователя", "HTTP / JSON RPC")
+Rel(gate, auth, "Авторизация пользователя", "HTTP / JSON RPC")
+
+Rel(worker, notification, "Создание уведомлений для пользователя", "HTTP / JSON RPC")
+
+
+Rel(gate, jaeger, "Отправка трейсов", "gRPC")
+Rel(auth, jaeger, "Отправка трейсов", "gRPC")
+Rel(handler, jaeger, "Отправка трейсов", "gRPC")
+Rel(log, jaeger, "Отправка трейсов", "gRPC")
+Rel(notification, jaeger, "Отправка трейсов", "gRPC")
+Rel(worker, jaeger, "Отправка трейсов", "gRPC")
+
+
+Rel(gate, prompgw, "Отправка метрик", "HTTP")
+Rel(auth, prompgw, "Отправка метрик", "HTTP")
+Rel(handler, prompgw, "Отправка метрик", "HTTP")
+Rel(log, prompgw, "Отправка метрик", "HTTP")
+Rel(notification, prompgw, "Отправка метрик", "HTTP")
+Rel(worker, prompgw, "Отправка метрик", "HTTP")
+
+Rel(victoriametrics, prompgw, "СБор метрик", "HTTP")
+Rel(vector, docker, "Сбор логов", "HTTP")
+Rel(vector, victorialogs, "Отправка логов", "HTTP")
+Rel(grafana, victoriametrics, "Просмотр метрик", "HTTP")
+Rel(grafana, victorialogs, "Просмотр логов", "HTTP")
+
+
+Rel(admin, victoriametrics, "Просмотр метрик", "HTTP")
+Rel(admin, victorialogs, "Просмотр логов", "HTTP")
+Rel(admin, jaeger, "Просмотр телеметрии", "HTTP")
+Rel(admin, grafana, "Просмотр логов и метрик", "HTTP")
+
+SHOW_LEGEND()
+@enduml
