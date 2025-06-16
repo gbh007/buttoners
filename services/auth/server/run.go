@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/core/redis"
 	"github.com/gbh007/buttoners/services/auth/internal/storage"
 	"github.com/go-chi/chi/v5"
@@ -29,9 +32,17 @@ type CommunicationConfig struct {
 func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 	go metrics.Run(metrics.Config{Addr: comCfg.PrometheusAddress})
 
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
+
+	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	redisClient := redis.New[dto.UserInfo](comCfg.RedisAddress)
 
-	err := redisClient.Connect(ctx)
+	err = redisClient.Connect(ctx)
 	if err != nil {
 		return err
 	}
@@ -62,7 +73,7 @@ func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 
 	server := &http.Server{
 		Addr:    comCfg.SelfAddress,
-		Handler: otelhttp.NewHandler(router, "Auth server"),
+		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(logger, httpServerMetrics, "auth", router), "Auth server"),
 	}
 
 	go func() {
