@@ -13,6 +13,7 @@ import (
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/core/redis"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -27,6 +28,11 @@ func Run(ctx context.Context, cfg Config) error {
 	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
+	grpcServerMetrics, err := metrics.NewGRPCServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
 		return err
 	}
@@ -96,8 +102,13 @@ func Run(ctx context.Context, cfg Config) error {
 		redis:        redisClient,
 	}
 
+	obs := observability.NewGRPCServerInterceptor(logger, grpcServerMetrics, metrics.InstanceName)
+
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(s.logInterceptor),
+		grpc.ChainUnaryInterceptor(
+			obs.Unary,
+			s.logInterceptor,
+		),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 	pb.RegisterGateServer(grpcServer, s)
