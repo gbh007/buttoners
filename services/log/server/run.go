@@ -35,7 +35,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	kafkaClient := kafka.New(cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
 
 	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {

@@ -40,8 +40,6 @@ func (s *pbServer) logInterceptor(
 		routeName = info.FullMethod
 	}
 
-	log.Printf("%s handle %s %s\n", requestID, routeName, addr)
-
 	kafkaData := dto.KafkaLogData{
 		Action:      routeName,
 		Addr:        addr,

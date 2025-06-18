@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
@@ -14,7 +16,10 @@ import (
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
 
-	kafkaClient := kafka.New(cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	logger = logger.With("service_name", metrics.InstanceName)
+
+	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
 
 	err := kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {

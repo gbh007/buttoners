@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -44,7 +45,40 @@ func (c *Client) Read(ctx context.Context, v any) (context.Context, string, erro
 		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, err)
 	}
 
+	requestLog := []any{
+		slog.String("message_key", string(msg.Key)),
+		slog.String("topic", c.topic),
+	}
+
+	if len(msg.Headers) > 0 {
+		headers := make(map[string]string)
+
+		for _, v := range msg.Headers {
+			old := headers[v.Key]
+			if old != "" {
+				old += ";"
+			}
+			old += string(v.Value)
+			headers[v.Key] = old
+		}
+
+		requestLog = append(
+			requestLog,
+			slog.Any("headers", headers),
+		)
+	}
+
+	if len(msg.Value) > 0 {
+		requestLog = append(requestLog, slog.String("body", string(msg.Value)))
+	}
+
 	registerReadHandleTime(true, time.Since(startTime))
+
+	c.logger.InfoContext(
+		ctx, "kafka consume",
+		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
+		slog.Group("request", requestLog...),
+	)
 
 	return ctx, string(msg.Key), nil
 }

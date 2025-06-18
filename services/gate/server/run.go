@@ -22,7 +22,6 @@ import (
 
 func Run(ctx context.Context, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-	const serviceName = "gate-service"
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	logger = logger.With("service_name", metrics.InstanceName)
@@ -37,7 +36,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, serviceName)
+	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	notificationClient, err := notificationclient.New(
 		logger, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
-		cfg.NotificationService.Addr, cfg.NotificationService.Token, serviceName,
+		cfg.NotificationService.Addr, cfg.NotificationService.Token, metrics.InstanceName,
 	)
 	if err != nil {
 		return err
@@ -63,14 +62,14 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer notificationClient.Close()
 
-	logClient, err := logclient.New(logger, otel.GetTracerProvider().Tracer("log-client"), httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, serviceName)
+	logClient, err := logclient.New(logger, otel.GetTracerProvider().Tracer("log-client"), httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
 	}
 
 	defer logClient.Close()
 
-	kafkaTaskClient := kafka.New(cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaTaskClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
 
 	err = kafkaTaskClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -79,7 +78,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer kafkaTaskClient.Close()
 
-	kafkaLogClient := kafka.New(cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaLogClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
 
 	err = kafkaLogClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {

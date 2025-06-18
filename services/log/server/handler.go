@@ -49,8 +49,6 @@ func (h *handler) handle(ctx context.Context, key string, data *dto.KafkaLogData
 
 	startTime := time.Now()
 
-	log.Printf("accept %s %#+v\n", key, data)
-
 	dbCtx, dbCnl := context.WithTimeout(ctx, time.Second*5)
 	defer dbCnl()
 

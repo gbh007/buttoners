@@ -1,8 +1,6 @@
 package kafka
 
 import (
-	"log"
-
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/protocol"
 	"go.opentelemetry.io/otel/propagation"
@@ -18,8 +16,6 @@ func toMapCarrier(in []kafka.Header) propagation.MapCarrier {
 		out[raw.Key] = string(raw.Value)
 	}
 
-	log.Println(out)
-
 	return out
 }
 
@@ -32,8 +28,6 @@ func fromMapCarrier(in propagation.MapCarrier) []kafka.Header {
 			Value: []byte(v),
 		})
 	}
-
-	log.Println(out)
 
 	return out
 }
