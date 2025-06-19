@@ -29,7 +29,11 @@ func Run(ctx context.Context, cfg Config) error {
 	defer kafkaClient.Close()
 
 	rabbitClient := rabbitmq.New[dto.RabbitMQData](
-		cfg.RabbitMQ.Username, cfg.RabbitMQ.Password, cfg.RabbitMQ.Addr, cfg.RabbitMQ.QueueName,
+		logger,
+		cfg.RabbitMQ.Username,
+		cfg.RabbitMQ.Password,
+		cfg.RabbitMQ.Addr,
+		cfg.RabbitMQ.QueueName,
 	)
 
 	err = rabbitClient.Connect(ctx)

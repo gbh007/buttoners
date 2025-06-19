@@ -38,13 +38,6 @@ func (c *Client) Read(ctx context.Context, v any) (context.Context, string, erro
 
 	span.SetAttributes(attribute.String("wait_time", startTime.Sub(realStartTime).String()))
 
-	err = json.Unmarshal(msg.Value, &v)
-	if err != nil {
-		registerReadHandleTime(false, time.Since(startTime))
-
-		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, err)
-	}
-
 	requestLog := []any{
 		slog.String("message_key", string(msg.Key)),
 		slog.String("topic", c.topic),
@@ -72,13 +65,20 @@ func (c *Client) Read(ctx context.Context, v any) (context.Context, string, erro
 		requestLog = append(requestLog, slog.String("body", string(msg.Value)))
 	}
 
-	registerReadHandleTime(true, time.Since(startTime))
-
 	c.logger.InfoContext(
 		ctx, "kafka consume",
 		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
 		slog.Group("request", requestLog...),
 	)
+
+	err = json.Unmarshal(msg.Value, &v)
+	if err != nil {
+		registerReadHandleTime(false, time.Since(startTime))
+
+		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, err)
+	}
+
+	registerReadHandleTime(true, time.Since(startTime))
 
 	return ctx, string(msg.Key), nil
 }

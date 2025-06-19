@@ -23,8 +23,7 @@ type Client struct {
 	numPartitions int
 }
 
-func New(
-	logger *slog.Logger, addr, topic, groupID string, numPartitions int) *Client {
+func New(logger *slog.Logger, addr, topic, groupID string, numPartitions int) *Client {
 	return &Client{
 		logger:        logger,
 		topic:         topic,
