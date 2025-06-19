@@ -13,11 +13,34 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (c *Client) Write(ctx context.Context, k string, v any) error {
+func (c *Client) Write(ctx context.Context, k string, v any) (returnedErr error) {
+	startTime := time.Now()
+
 	ctx, span := c.tracer.Start(ctx, "kafka-write")
 	defer span.End()
 
-	startTime := time.Now()
+	requestLog := []any{
+		slog.String("queue", c.topic),
+		slog.String("addr", c.addr),
+	}
+
+	defer func() {
+		args := []any{
+			slog.Bool("success", returnedErr == nil),
+			slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
+			slog.Group("request", requestLog...),
+		}
+
+		if returnedErr != nil {
+			args = append(args, slog.String("error", returnedErr.Error()))
+		}
+
+		c.logger.InfoContext(
+			ctx,
+			"kafka produce",
+			args...,
+		)
+	}()
 
 	if c.writer == nil {
 		registerWriteHandleTime(false, time.Since(startTime))
@@ -42,19 +65,7 @@ func (c *Client) Write(ctx context.Context, k string, v any) error {
 		Headers: fromMapCarrier(carrier),
 	}
 
-	err = c.writer.WriteMessages(ctx, msg)
-	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
-		return fmt.Errorf("%w: Write: %w", ErrKafkaClient, err)
-	}
-
-	registerWriteHandleTime(true, time.Since(startTime))
-
-	requestLog := []any{
-		slog.String("message_key", string(msg.Key)),
-		slog.String("topic", c.topic),
-	}
+	requestLog = append(requestLog, slog.String("message_key", string(msg.Key)))
 
 	if len(msg.Headers) > 0 {
 		headers := make(map[string]string)
@@ -78,11 +89,14 @@ func (c *Client) Write(ctx context.Context, k string, v any) error {
 		requestLog = append(requestLog, slog.String("body", string(msg.Value)))
 	}
 
-	c.logger.InfoContext(
-		ctx, "kafka produce",
-		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
-		slog.Group("request", requestLog...),
-	)
+	err = c.writer.WriteMessages(ctx, msg)
+	if err != nil {
+		registerWriteHandleTime(false, time.Since(startTime))
+
+		return fmt.Errorf("%w: Write: %w", ErrKafkaClient, err)
+	}
+
+	registerWriteHandleTime(true, time.Since(startTime))
 
 	return nil
 }

@@ -12,8 +12,31 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func (c *Client) Read(ctx context.Context, v any) (context.Context, string, error) {
+func (c *Client) Read(ctx context.Context, v any) (_ context.Context, _ string, returnedErr error) {
 	realStartTime := time.Now()
+
+	requestLog := []any{
+		slog.String("queue", c.topic),
+		slog.String("addr", c.addr),
+	}
+
+	defer func() {
+		args := []any{
+			slog.Bool("success", returnedErr == nil),
+			slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
+			slog.Group("request", requestLog...),
+		}
+
+		if returnedErr != nil {
+			args = append(args, slog.String("error", returnedErr.Error()))
+		}
+
+		c.logger.InfoContext(
+			ctx,
+			"kafka consume",
+			args...,
+		)
+	}()
 
 	if c.reader == nil {
 		registerReadHandleTime(false, time.Since(realStartTime))
@@ -38,10 +61,7 @@ func (c *Client) Read(ctx context.Context, v any) (context.Context, string, erro
 
 	span.SetAttributes(attribute.String("wait_time", startTime.Sub(realStartTime).String()))
 
-	requestLog := []any{
-		slog.String("message_key", string(msg.Key)),
-		slog.String("topic", c.topic),
-	}
+	requestLog = append(requestLog, slog.String("message_key", string(msg.Key)))
 
 	if len(msg.Headers) > 0 {
 		headers := make(map[string]string)
@@ -64,12 +84,6 @@ func (c *Client) Read(ctx context.Context, v any) (context.Context, string, erro
 	if len(msg.Value) > 0 {
 		requestLog = append(requestLog, slog.String("body", string(msg.Value)))
 	}
-
-	c.logger.InfoContext(
-		ctx, "kafka consume",
-		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
-		slog.Group("request", requestLog...),
-	)
 
 	err = json.Unmarshal(msg.Value, &v)
 	if err != nil {

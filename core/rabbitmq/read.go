@@ -55,19 +55,19 @@ func (c *Client[T]) StartRead(ctx context.Context) (chan Read[T], error) {
 }
 
 func (c *Client[T]) handleMsg(msg amqp091.Delivery) Read[T] {
-	return func(ctx context.Context) (context.Context, *T, error) {
+	return func(ctx context.Context) (_ context.Context, _ *T, returnedErr error) {
+		startTime := time.Now()
+
 		// Распространение трассировки
 		ctx = otel.GetTextMapPropagator().Extract(ctx, toMapCarrier(msg.Headers))
 
 		ctx, span := c.tracer.Start(ctx, "rabbitmq-read")
 		defer span.End()
 
-		startTime := time.Now()
-
 		requestLog := []any{
-			slog.String("routing_key", msg.RoutingKey),
-			slog.String("msg_id", msg.MessageId),
+			slog.String("message_key", msg.MessageId),
 			slog.String("queue", c.queueName),
+			slog.String("addr", c.addr),
 		}
 
 		if len(msg.Headers) > 0 {
@@ -92,11 +92,23 @@ func (c *Client[T]) handleMsg(msg amqp091.Delivery) Read[T] {
 			requestLog = append(requestLog, slog.String("body", string(msg.Body)))
 		}
 
-		c.logger.InfoContext(
-			ctx, "rabbit mq read",
-			slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
-			slog.Group("request", requestLog...),
-		)
+		defer func() {
+			args := []any{
+				slog.Bool("success", returnedErr == nil),
+				slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
+				slog.Group("request", requestLog...),
+			}
+
+			if returnedErr != nil {
+				args = append(args, slog.String("error", returnedErr.Error()))
+			}
+
+			c.logger.InfoContext(
+				ctx,
+				"rabbit mq read",
+				args...,
+			)
+		}()
 
 		v := new(T)
 

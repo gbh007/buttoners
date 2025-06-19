@@ -15,11 +15,35 @@ import (
 
 const contentTypeJSON = "application/json"
 
-func (c *Client[T]) Write(ctx context.Context, v T) error {
+func (c *Client[T]) Write(ctx context.Context, v T) (returnedErr error) {
+	startTime := time.Now()
+
 	ctx, span := c.tracer.Start(ctx, "rabbitmq-write")
 	defer span.End()
 
-	startTime := time.Now()
+	requestLog := []any{
+		slog.String("queue", c.queueName),
+		slog.String("addr", c.addr),
+	}
+
+	defer func() {
+		args := []any{
+			slog.Bool("success", returnedErr == nil),
+			slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
+			slog.Group("request", requestLog...),
+		}
+
+		if returnedErr != nil {
+			args = append(args, slog.String("error", returnedErr.Error()))
+		}
+
+		c.logger.InfoContext(
+			ctx,
+			"rabbit mq write",
+			args...,
+		)
+	}()
+
 	if c.ch == nil {
 		registerWriteHandleTime(false, time.Since(startTime))
 
@@ -43,24 +67,7 @@ func (c *Client[T]) Write(ctx context.Context, v T) error {
 		Headers:     fromMapCarrier(carrier),
 	}
 
-	err = c.ch.PublishWithContext(
-		ctx,
-		"",
-		c.queue.Name,
-		false,
-		false,
-		msg,
-	)
-	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
-		return fmt.Errorf("%w: Write: %w", ErrRabbitMQClient, err)
-	}
-
-	requestLog := []any{
-		slog.String("msg_id", msg.MessageId),
-		slog.String("queue", c.queueName),
-	}
+	requestLog = append(requestLog, slog.String("message_key", msg.MessageId))
 
 	if len(msg.Headers) > 0 {
 		headers := make(map[string]string)
@@ -84,11 +91,19 @@ func (c *Client[T]) Write(ctx context.Context, v T) error {
 		requestLog = append(requestLog, slog.String("body", string(msg.Body)))
 	}
 
-	c.logger.InfoContext(
-		ctx, "rabbit mq write",
-		slog.String("trace_id", trace.SpanContextFromContext(ctx).TraceID().String()),
-		slog.Group("request", requestLog...),
+	err = c.ch.PublishWithContext(
+		ctx,
+		"",
+		c.queue.Name,
+		false,
+		false,
+		msg,
 	)
+	if err != nil {
+		registerWriteHandleTime(false, time.Since(startTime))
+
+		return fmt.Errorf("%w: Write: %w", ErrRabbitMQClient, err)
+	}
 
 	registerWriteHandleTime(true, time.Since(startTime))
 
