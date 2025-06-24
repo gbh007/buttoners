@@ -44,6 +44,8 @@ func Run(ctx context.Context, cfg Config) error {
 		cfg.RabbitMQ.Password,
 		cfg.RabbitMQ.Addr,
 		cfg.RabbitMQ.QueueName,
+		queueReaderMetrics,
+		queueWriterMetrics,
 	)
 
 	err = rabbitClient.Connect(ctx)

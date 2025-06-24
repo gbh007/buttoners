@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -17,6 +18,18 @@ const contentTypeJSON = "application/json"
 
 func (c *Client[T]) Write(ctx context.Context, v T) (returnedErr error) {
 	startTime := time.Now()
+
+	c.writerMetrics.IncActive(c.addr, c.queueName)
+	defer c.writerMetrics.DecActive(c.addr, c.queueName)
+
+	defer func() {
+		status := metrics.ResultOK
+		if returnedErr != nil {
+			status = metrics.ResultError
+		}
+
+		c.writerMetrics.AddHandle(c.addr, c.queueName, status, time.Since(startTime))
+	}()
 
 	ctx, span := c.tracer.Start(ctx, "rabbitmq-write")
 	defer span.End()
@@ -45,15 +58,11 @@ func (c *Client[T]) Write(ctx context.Context, v T) (returnedErr error) {
 	}()
 
 	if c.ch == nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrRabbitMQClient, ErrChannelNotInitialized)
 	}
 
 	data, err := json.Marshal(v)
 	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrRabbitMQClient, err)
 	}
 
@@ -100,12 +109,8 @@ func (c *Client[T]) Write(ctx context.Context, v T) (returnedErr error) {
 		msg,
 	)
 	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrRabbitMQClient, err)
 	}
-
-	registerWriteHandleTime(true, time.Since(startTime))
 
 	return nil
 }

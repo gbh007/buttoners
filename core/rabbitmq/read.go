@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/rabbitmq/amqp091-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -57,6 +58,18 @@ func (c *Client[T]) StartRead(ctx context.Context) (chan Read[T], error) {
 func (c *Client[T]) handleMsg(msg amqp091.Delivery) Read[T] {
 	return func(ctx context.Context) (_ context.Context, _ *T, returnedErr error) {
 		startTime := time.Now()
+
+		c.readerMetrics.IncActive(c.addr, c.queueName, "")
+		defer c.readerMetrics.DecActive(c.addr, c.queueName, "")
+
+		defer func() {
+			status := metrics.ResultOK
+			if returnedErr != nil {
+				status = metrics.ResultError
+			}
+
+			c.readerMetrics.AddHandle(c.addr, c.queueName, "", status, time.Since(startTime))
+		}()
 
 		// Распространение трассировки
 		ctx = otel.GetTextMapPropagator().Extract(ctx, toMapCarrier(msg.Headers))
@@ -114,14 +127,8 @@ func (c *Client[T]) handleMsg(msg amqp091.Delivery) Read[T] {
 
 		err := json.Unmarshal(msg.Body, &v)
 		if err != nil {
-			registerReadHandleTime(false, time.Since(startTime))
-
 			return ctx, nil, fmt.Errorf("%w: Read: %w", ErrRabbitMQClient, err)
 		}
-
-		// Находиться после занесения в очередь, по причине того,
-		// что чтение рассматриваем как процесс перемещения задачи в раннер.
-		registerReadHandleTime(true, time.Since(startTime))
 
 		return ctx, v, nil
 	}
