@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -39,19 +40,27 @@ func (c *Client) Read(ctx context.Context, v any) (_ context.Context, _ string, 
 	}()
 
 	if c.reader == nil {
-		registerReadHandleTime(false, time.Since(realStartTime))
-
 		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, ErrConnectionNotInitialized)
 	}
 
+	c.readerMetrics.IncActive(c.addr, c.topic, c.groupID)
+	defer c.readerMetrics.DecActive(c.addr, c.topic, c.groupID)
+
 	msg, err := c.reader.ReadMessage(ctx)
 	if err != nil {
-		registerReadHandleTime(false, time.Since(realStartTime))
-
 		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, err)
 	}
 
 	startTime := time.Now()
+
+	defer func() {
+		status := metrics.ResultOK
+		if returnedErr != nil {
+			status = metrics.ResultError
+		}
+
+		c.readerMetrics.AddHandle(c.addr, c.topic, c.groupID, status, time.Since(startTime))
+	}()
 
 	// Распространение трассировки
 	ctx = otel.GetTextMapPropagator().Extract(ctx, toMapCarrier(msg.Headers))
@@ -87,12 +96,8 @@ func (c *Client) Read(ctx context.Context, v any) (_ context.Context, _ string, 
 
 	err = json.Unmarshal(msg.Value, &v)
 	if err != nil {
-		registerReadHandleTime(false, time.Since(startTime))
-
 		return ctx, "", fmt.Errorf("%w: Read: %w", ErrKafkaClient, err)
 	}
-
-	registerReadHandleTime(true, time.Since(startTime))
 
 	return ctx, string(msg.Key), nil
 }

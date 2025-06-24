@@ -19,9 +19,19 @@ func Run(ctx context.Context, cfg Config) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	logger = logger.With("service_name", metrics.InstanceName)
 
-	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
 
-	err := kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
+	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
+	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
+
+	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
 		return err
 	}

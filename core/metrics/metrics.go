@@ -17,8 +17,9 @@ const (
 	MetricsNamespace = "buttoners"
 	subsystemName    = "protobuf"
 
-	resultOK   = "ok"
-	resultFail = "fail"
+	ResultOK    = "ok"
+	ResultError = "err"
+	ResultFail  = "fail"
 )
 
 var (
@@ -46,10 +47,10 @@ func init() {
 
 func ConvertOk(ok bool) string {
 	if ok {
-		return resultOK
+		return ResultOK
 	}
 
-	return resultFail
+	return ResultFail
 }
 
 func LogRequest(action string, ok bool, d time.Duration) {

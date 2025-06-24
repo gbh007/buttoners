@@ -36,6 +36,16 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
+	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
+	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
@@ -69,7 +79,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer logClient.Close()
 
-	kafkaTaskClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaTaskClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaTaskClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -78,7 +88,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer kafkaTaskClient.Close()
 
-	kafkaLogClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaLogClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaLogClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {

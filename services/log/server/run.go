@@ -30,12 +30,22 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
+	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
+	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
 	}
 
-	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions)
+	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {

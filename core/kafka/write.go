@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/segmentio/kafka-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -15,6 +16,9 @@ import (
 
 func (c *Client) Write(ctx context.Context, k string, v any) (returnedErr error) {
 	startTime := time.Now()
+
+	c.writerMetrics.IncActive(c.addr, c.topic)
+	defer c.writerMetrics.DecActive(c.addr, c.topic)
 
 	ctx, span := c.tracer.Start(ctx, "kafka-write")
 	defer span.End()
@@ -43,15 +47,20 @@ func (c *Client) Write(ctx context.Context, k string, v any) (returnedErr error)
 	}()
 
 	if c.writer == nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrKafkaClient, ErrConnectionNotInitialized)
 	}
 
+	defer func() {
+		status := metrics.ResultOK
+		if returnedErr != nil {
+			status = metrics.ResultError
+		}
+
+		c.writerMetrics.AddHandle(c.addr, c.topic, status, time.Since(startTime))
+	}()
+
 	data, err := json.Marshal(v)
 	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrKafkaClient, err)
 	}
 
@@ -91,12 +100,8 @@ func (c *Client) Write(ctx context.Context, k string, v any) (returnedErr error)
 
 	err = c.writer.WriteMessages(ctx, msg)
 	if err != nil {
-		registerWriteHandleTime(false, time.Since(startTime))
-
 		return fmt.Errorf("%w: Write: %w", ErrKafkaClient, err)
 	}
-
-	registerWriteHandleTime(true, time.Since(startTime))
 
 	return nil
 }
