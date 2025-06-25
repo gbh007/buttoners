@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
@@ -29,11 +28,8 @@ type CommunicationConfig struct {
 	PrometheusAddress string
 }
 
-func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
+func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DBConfig) error {
 	go metrics.Run(metrics.Config{Addr: comCfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -73,7 +69,7 @@ func Run(ctx context.Context, comCfg CommunicationConfig, cfg DBConfig) error {
 
 	server := &http.Server{
 		Addr:    comCfg.SelfAddress,
-		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(logger, httpServerMetrics, "auth", router), "Auth server"),
+		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(l, httpServerMetrics, "auth", router), "Auth server"),
 	}
 
 	go func() {

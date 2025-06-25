@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/gbh007/buttoners/core/config"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/tracer"
 	"github.com/gbh007/buttoners/services/handler/server"
@@ -21,12 +23,6 @@ type Config struct {
 }
 
 func main() {
-	cfg := new(Config)
-
-	err := envconfig.Init(cfg)
-	if err != nil {
-		log.Fatalln(err)
-	}
 
 	ctx, cancelNotify := signal.NotifyContext(
 		context.Background(),
@@ -37,17 +33,31 @@ func main() {
 	)
 	defer cancelNotify()
 
-	log.Println("server start")
+	const serviceName = "handler"
 
-	metrics.InstanceName = "handler"
+	l := logger.New(serviceName, "debug") // FIXME: level
+	metrics.InstanceName = serviceName
+
+	cfg := new(Config)
+
+	err := envconfig.Init(cfg)
+	if err != nil {
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail parse config", "error", err.Error())
+		os.Exit(1)
+	}
 
 	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, metrics.InstanceName)
 	if err != nil {
-		log.Fatalln(err) //nolint:gocritic
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
+		os.Exit(1)
 	}
+
+	logger.LogWithMeta(l, ctx, slog.LevelInfo, "server start")
+	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
 	err = server.Run(
 		ctx,
+		l,
 		server.Config{
 			ServiceName:       metrics.InstanceName,
 			PrometheusAddress: cfg.PrometheusAddr,
@@ -65,8 +75,7 @@ func main() {
 		},
 	)
 	if err != nil {
-		log.Println(err)
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server run result", "error", err.Error())
+		os.Exit(1)
 	}
-
-	log.Println("server stop")
 }

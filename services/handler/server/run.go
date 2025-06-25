@@ -2,22 +2,18 @@ package server
 
 import (
 	"context"
-	"log"
 	"log/slog"
-	"os"
 
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	"go.opentelemetry.io/otel"
 )
 
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -29,7 +25,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
+	kafkaClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -39,7 +35,7 @@ func Run(ctx context.Context, cfg Config) error {
 	defer kafkaClient.Close()
 
 	rabbitClient := rabbitmq.New[dto.RabbitMQData](
-		logger,
+		l,
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
 		cfg.RabbitMQ.Addr,
@@ -64,7 +60,7 @@ label1:
 		data := new(dto.KafkaTaskData)
 		ctx, key, err := kafkaClient.Read(ctx, data)
 		if err != nil {
-			log.Println(err.Error())
+			logger.LogWithMeta(l, ctx, slog.LevelWarn, "kafka read", "error", err.Error())
 
 			select {
 			case <-ctx.Done():

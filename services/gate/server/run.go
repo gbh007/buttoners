@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net"
-	"os"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/clients/gateclient/gen/pb"
@@ -20,11 +19,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -46,7 +42,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, metrics.InstanceName)
+	authClient, err := authclient.New(l, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
 	}
@@ -63,7 +59,7 @@ func Run(ctx context.Context, cfg Config) error {
 	defer redisClient.Close()
 
 	notificationClient, err := notificationclient.New(
-		logger, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
+		l, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
 		cfg.NotificationService.Addr, cfg.NotificationService.Token, metrics.InstanceName,
 	)
 	if err != nil {
@@ -72,14 +68,14 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer notificationClient.Close()
 
-	logClient, err := logclient.New(logger, otel.GetTracerProvider().Tracer("log-client"), httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, metrics.InstanceName)
+	logClient, err := logclient.New(l, otel.GetTracerProvider().Tracer("log-client"), httpClientMetrics, cfg.LogService.Addr, cfg.LogService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
 	}
 
 	defer logClient.Close()
 
-	kafkaTaskClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
+	kafkaTaskClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaTaskClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -88,7 +84,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	defer kafkaTaskClient.Close()
 
-	kafkaLogClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
+	kafkaLogClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaLogClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -111,7 +107,7 @@ func Run(ctx context.Context, cfg Config) error {
 		redis:        redisClient,
 	}
 
-	obs := observability.NewGRPCServerInterceptor(logger, grpcServerMetrics, metrics.InstanceName)
+	obs := observability.NewGRPCServerInterceptor(l, grpcServerMetrics, metrics.InstanceName)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(

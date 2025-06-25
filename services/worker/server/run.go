@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"log/slog"
-	"os"
 	"sync"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
@@ -15,11 +14,8 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -42,7 +38,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 
 	rabbitClient := rabbitmq.New[dto.RabbitMQData](
-		logger,
+		l,
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
 		cfg.RabbitMQ.Addr,
@@ -59,7 +55,7 @@ func Run(ctx context.Context, cfg Config) error {
 	defer rabbitClient.Close()
 
 	notificationClient, err := notificationclient.New(
-		logger, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
+		l, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
 		cfg.NotificationService.Addr, cfg.NotificationService.Token, "worker-service",
 	)
 	if err != nil {

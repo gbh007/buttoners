@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"log/slog"
-	"os"
 	"time"
 
 	"github.com/gbh007/buttoners/core/metrics"
@@ -23,11 +22,8 @@ type Config struct {
 	DB                DBConfig
 }
 
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	tracer := otel.GetTracerProvider().Tracer("notification-server")
 
@@ -45,7 +41,7 @@ func Run(ctx context.Context, cfg Config) error {
 		db:      db,
 		token:   cfg.SelfToken,
 		tracer:  tracer,
-		logger:  logger,
+		logger:  l,
 		metrics: httpServerMetrics,
 	}
 	// FIXME: добавить авторизацию

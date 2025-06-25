@@ -2,15 +2,14 @@ package server
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/logclient"
 	"github.com/gbh007/buttoners/core/kafka"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
@@ -19,11 +18,8 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-func Run(ctx context.Context, cfg Config) error {
+func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
-
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	logger = logger.With("service_name", metrics.InstanceName)
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -45,7 +41,7 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	kafkaClient := kafka.New(logger, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
+	kafkaClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
 
 	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
 	if err != nil {
@@ -78,7 +74,7 @@ func Run(ctx context.Context, cfg Config) error {
 			httpServerMetrics.AddHandle(string(ctx.Request().Host()), string(ctx.Request().URI().Path()), string(ctx.Request().Header.Method()), ctx.Response().StatusCode(), time.Since(tStart))
 		}()
 
-		defer observability.LogFastHTTPData(ctx.UserContext(), logger, "log server request", ctx.Request(), ctx.Response())
+		defer observability.LogFastHTTPData(ctx.UserContext(), l, "log server request", ctx.Request(), ctx.Response())
 
 		return ctx.Next()
 	}
@@ -126,7 +122,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 		err := handler.Run(ctx)
 		if err != nil {
-			log.Println(err)
+			logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess handler result", "error", err.Error())
 		}
 	}()
 
@@ -135,7 +131,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 		err := fb.Listen(cfg.SelfAddress)
 		if err != nil {
-			log.Println(err)
+			logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server result", "error", err.Error())
 		}
 	}()
 
