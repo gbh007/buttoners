@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/clients/gateclient/gen/pb"
@@ -21,6 +22,8 @@ type pbServer struct {
 	pb.UnimplementedGateServer
 	pb.UnimplementedNotificationServer
 	pb.UnimplementedLogServer
+
+	logger *slog.Logger
 
 	auth         *authclient.Client
 	notification *notificationclient.Client

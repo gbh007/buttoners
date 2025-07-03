@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
@@ -17,6 +18,7 @@ import (
 
 type runner struct {
 	tracer trace.Tracer
+	logger *slog.Logger
 
 	notification *notificationclient.Client
 	db           *storage.Database
@@ -43,15 +45,13 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 	ctx, data, err := dataReader(ctx)
 	if err != nil {
-		log.Println(err)
+		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "read from rabbitmq", "error", err.Error())
 
 		return
 	}
 
 	ctx, span := r.tracer.Start(ctx, "handle msg")
 	defer span.End()
-
-	log.Printf("accept %#+v\n", data)
 
 	startTime := time.Now()
 
@@ -80,7 +80,7 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 	businessEndTime := time.Now()
 
-	log.Printf("finished %s = %#+v\n", data.RequestID, n)
+	logger.LogWithMeta(r.logger, ctx, slog.LevelInfo, "finished", "data_request_id", data.RequestID, "notification", n)
 
 	dbCtx, dbCnl := context.WithTimeout(ctx, time.Second*5)
 	defer dbCnl()
@@ -96,7 +96,7 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 		EndTime:    businessEndTime,
 	})
 	if err != nil {
-		log.Println(err)
+		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "write to task result", "error", err.Error(), "data_request_id", data.RequestID)
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "insert result")
@@ -107,7 +107,7 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 	err = r.notification.New(notificationCtx, n)
 	if err != nil {
-		log.Println(err)
+		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "send notification", "error", err.Error(), "data_request_id", data.RequestID)
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "new notification")

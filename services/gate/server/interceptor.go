@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/gateclient"
 	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/metrics"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -60,7 +61,7 @@ func (s *pbServer) logInterceptor(
 	if kafkaData.SessionToken != "" {
 		userInfo, err := s.authInfoRaw(ctx, kafkaData.SessionToken)
 		if err != nil {
-			log.Println(err)
+			logger.LogWithMeta(s.logger, ctx, slog.LevelError, "get user info", "error", err.Error())
 		} else {
 			ctx = context.WithValue(ctx, userInfoKey, userInfo)
 			kafkaData.UserID = userInfo.UserID

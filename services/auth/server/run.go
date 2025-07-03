@@ -29,7 +29,7 @@ type CommunicationConfig struct {
 }
 
 func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DBConfig) error {
-	go metrics.Run(metrics.Config{Addr: comCfg.PrometheusAddress})
+	go metrics.Run(l, metrics.Config{Addr: comCfg.PrometheusAddress})
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {

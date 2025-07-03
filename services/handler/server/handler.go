@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -13,6 +14,7 @@ import (
 
 type handler struct {
 	tracer trace.Tracer
+	logger *slog.Logger
 }
 
 func (h *handler) handle(
@@ -23,8 +25,6 @@ func (h *handler) handle(
 	defer span.End()
 
 	startTime := time.Now()
-
-	log.Printf("accept %s %#+v\n", key, data)
 
 	rabbitCtx, rabbitCnl := context.WithTimeout(ctx, time.Second*10)
 	defer rabbitCnl()
@@ -39,9 +39,8 @@ func (h *handler) handle(
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "handle error")
 
-		log.Println(key, err)
+		logger.LogWithMeta(h.logger, ctx, slog.LevelError, "write to rabbitmq", "error", err.Error(), "msg_key", key)
 	}
 
-	log.Printf("send to RabbitMQ %s\n", key)
 	registerHandleTime(time.Since(startTime))
 }

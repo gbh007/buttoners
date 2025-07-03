@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -15,8 +15,8 @@ type Config struct {
 
 var InstanceName = "unknown"
 
-func Run(cfg Config) {
-	log.Println("metrics start")
+func Run(l *slog.Logger, cfg Config) {
+	l.Info("metrics start")
 
 	host, _ := os.Hostname()
 
@@ -31,7 +31,7 @@ func Run(cfg Config) {
 
 	for range time.NewTicker(time.Second).C {
 		if err := pusher.Push(); err != nil {
-			log.Println(err)
+			l.Error("push metrics error", "error", err.Error())
 		}
 	}
 }

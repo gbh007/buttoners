@@ -19,7 +19,7 @@ import (
 )
 
 func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
-	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddress})
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -54,6 +54,7 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		kafka:  kafkaClient,
 		db:     db,
 		tracer: otel.GetTracerProvider().Tracer(cfg.ServiceName),
+		logger: l,
 	}
 
 	server := &pbServer{

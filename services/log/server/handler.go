@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"database/sql"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
+	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -19,6 +20,7 @@ type handler struct {
 	db *storage.Database
 
 	tracer trace.Tracer
+	logger *slog.Logger
 }
 
 func (h *handler) Run(ctx context.Context) error {
@@ -27,7 +29,7 @@ label1:
 		data := new(dto.KafkaLogData)
 		ctx, key, err := h.kafka.Read(ctx, data)
 		if err != nil {
-			log.Println(err.Error())
+			logger.LogWithMeta(h.logger, ctx, slog.LevelError, "kafka read", "error", err.Error())
 
 			select {
 			case <-ctx.Done():
@@ -78,7 +80,7 @@ func (h *handler) handle(ctx context.Context, key string, data *dto.KafkaLogData
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "handle error")
 
-		log.Println(key, err)
+		logger.LogWithMeta(h.logger, ctx, slog.LevelError, "add user log", "error", err.Error(), "msg_key", key)
 	}
 
 	registerHandleTime(time.Since(startTime))

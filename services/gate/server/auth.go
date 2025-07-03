@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
 	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/logger"
 )
 
 const cacheTTL = time.Minute * 5
@@ -33,7 +34,7 @@ func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*authclient.I
 
 	if err != nil {
 		// Ошибка отсутствия значения также логируется для отладки
-		log.Printf("%s error from redis: %s\n", token, err.Error())
+		logger.LogWithMeta(s.logger, ctx, slog.LevelError, "get session from cache", "error", err.Error())
 	} else {
 		return &authclient.InfoResponse{
 			UserID: redisData.ID,
@@ -54,7 +55,7 @@ func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*authclient.I
 	// В данном случае кешер сеттится специально здесь, а не в сервисе авторизации
 	err = s.redis.Set(ctx, token, dto.UserInfo{ID: info.UserID}, cacheTTL)
 	if err != nil {
-		log.Println(err)
+		logger.LogWithMeta(s.logger, ctx, slog.LevelError, "set session to cache", "error", err.Error())
 	}
 
 	return &info, nil

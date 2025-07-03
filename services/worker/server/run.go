@@ -15,7 +15,7 @@ import (
 )
 
 func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
-	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddress})
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -80,6 +80,7 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 			db:           db,
 			queue:        messages,
 			tracer:       otel.GetTracerProvider().Tracer(cfg.ServiceName),
+			logger:       l,
 		}
 
 		go func() {

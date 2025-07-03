@@ -20,7 +20,7 @@ import (
 )
 
 func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
-	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddress})
 
 	httpClientMetrics, err := metrics.NewHTTPClientMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
@@ -105,6 +105,7 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		notification: notificationClient,
 		log:          logClient,
 		redis:        redisClient,
+		logger:       l,
 	}
 
 	obs := observability.NewGRPCServerInterceptor(l, grpcServerMetrics, metrics.InstanceName)

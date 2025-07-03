@@ -23,7 +23,7 @@ type Config struct {
 }
 
 func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
-	go metrics.Run(metrics.Config{Addr: cfg.PrometheusAddress})
+	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddress})
 
 	tracer := otel.GetTracerProvider().Tracer("notification-server")
 
@@ -51,8 +51,11 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 
 	go func() {
 		<-ctx.Done()
-		sCtx, _ := context.WithTimeout(context.Background(), time.Second*10)
-		server.ShutdownWithContext(sCtx)
+		sCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+
+		err := server.ShutdownWithContext(sCtx)
+		l.Error("shutdown web server", "error", err.Error())
 	}()
 
 	err = server.ListenAndServe(cfg.SelfAddress)
