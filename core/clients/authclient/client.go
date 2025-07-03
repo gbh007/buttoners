@@ -27,6 +27,7 @@ func New(logger *slog.Logger, metrics *metrics.HTTPClientMetrics, addr, token, n
 		},
 		addr:  strings.TrimRight(addr, "/"),
 		token: token,
+		name:  name,
 	}
 
 	return c, nil

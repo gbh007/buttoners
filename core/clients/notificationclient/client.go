@@ -35,6 +35,7 @@ func New(
 		},
 		addr:    strings.TrimRight(addr, "/"),
 		token:   token,
+		name:    name,
 		logger:  logger,
 		tracer:  tracer,
 		metrics: metrics,
