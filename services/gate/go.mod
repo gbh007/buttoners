@@ -3,7 +3,7 @@ module github.com/gbh007/buttoners/services/gate
 go 1.24.2
 
 require (
-	github.com/gbh007/buttoners/core v0.0.0-20250607085240-efb15f1b2429
+	github.com/gbh007/buttoners/core v0.0.0-20250703045958-6c9e71e00a05
 	github.com/prometheus/client_golang v1.22.0
 	github.com/vrischmann/envconfig v1.4.1
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0
