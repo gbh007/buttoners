@@ -51,6 +51,7 @@ func (h *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		requestLog,
 		slog.String("host", req.URL.Host),
 		slog.String("path", req.URL.Path),
+		slog.String("method", req.Method),
 	)
 
 	if len(req.Header) > 0 {

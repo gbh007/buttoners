@@ -70,6 +70,7 @@ func main() {
 			Addr:         cfg.DB.Addr,
 			DatabaseName: cfg.DB.Name,
 		},
+		serviceName,
 	)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server run result", "error", err.Error())

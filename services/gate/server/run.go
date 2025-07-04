@@ -42,6 +42,11 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		return err
 	}
 
+	redisMetrics, err := metrics.NewRedisMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	authClient, err := authclient.New(l, httpClientMetrics, cfg.AuthService.Addr, cfg.AuthService.Token, metrics.InstanceName)
 	if err != nil {
 		return err
@@ -51,7 +56,7 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 
 	redisClient := redis.New[dto.UserInfo](cfg.RedisAddress)
 
-	err = redisClient.Connect(ctx)
+	err = redisClient.Connect(ctx, observability.NewRedisHook(l, redisMetrics, cfg.RedisAddress, metrics.InstanceName))
 	if err != nil {
 		return err
 	}

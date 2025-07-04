@@ -28,7 +28,7 @@ type CommunicationConfig struct {
 	PrometheusAddress string
 }
 
-func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DBConfig) error {
+func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DBConfig, serviceName string) error {
 	go metrics.Run(l, metrics.Config{Addr: comCfg.PrometheusAddress})
 
 	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
@@ -36,9 +36,14 @@ func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DB
 		return err
 	}
 
+	redisMetrics, err := metrics.NewRedisMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
+	if err != nil {
+		return err
+	}
+
 	redisClient := redis.New[dto.UserInfo](comCfg.RedisAddress)
 
-	err = redisClient.Connect(ctx)
+	err = redisClient.Connect(ctx, observability.NewRedisHook(l, redisMetrics, comCfg.RedisAddress, serviceName))
 	if err != nil {
 		return err
 	}
@@ -69,7 +74,7 @@ func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DB
 
 	server := &http.Server{
 		Addr:    comCfg.SelfAddress,
-		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(l, httpServerMetrics, "auth", router), "Auth server"),
+		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(l, httpServerMetrics, "auth", router), serviceName),
 	}
 
 	go func() {
