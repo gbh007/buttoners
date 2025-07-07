@@ -30,7 +30,6 @@ type Consumer[T any] struct {
 func NewConsumer[T any](
 	logger *slog.Logger,
 	addr, topic, groupID string,
-	numPartitions int,
 	readerMetrics *metrics.QueueReaderMetrics,
 	handler func(context.Context, T) error,
 ) *Consumer[T] {
