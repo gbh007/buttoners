@@ -15,11 +15,11 @@ import (
 type handler struct {
 	tracer trace.Tracer
 	logger *slog.Logger
+	rabbitClient *rabbitmq.Client[dto.RabbitMQData]
 }
 
 func (h *handler) handle(
 	ctx context.Context, key string, data *dto.KafkaTaskData,
-	rabbitClient *rabbitmq.Client[dto.RabbitMQData],
 ) {
 	ctx, span := h.tracer.Start(ctx, "handle msg")
 	defer span.End()
@@ -29,7 +29,7 @@ func (h *handler) handle(
 	rabbitCtx, rabbitCnl := context.WithTimeout(ctx, time.Second*10)
 	defer rabbitCnl()
 
-	err := rabbitClient.Write(rabbitCtx, dto.RabbitMQData{
+	err := h.rabbitClient.Write(rabbitCtx, dto.RabbitMQData{
 		RequestID: key,
 		UserID:    data.UserID,
 		Chance:    data.Chance,

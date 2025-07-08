@@ -32,11 +32,6 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		return err
 	}
 
-	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
-	if err != nil {
-		return err
-	}
-
 	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
 		return err
@@ -80,21 +75,11 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 
 	defer logClient.Close()
 
-	kafkaTaskClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
-
-	err = kafkaTaskClient.Connect(cfg.Kafka.NumPartitions > 0)
-	if err != nil {
-		return err
-	}
+	kafkaTaskClient := kafka.NewProducer[dto.KafkaTaskData](l, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, queueWriterMetrics)
 
 	defer kafkaTaskClient.Close()
 
-	kafkaLogClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.LogTopic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
-
-	err = kafkaLogClient.Connect(cfg.Kafka.NumPartitions > 0)
-	if err != nil {
-		return err
-	}
+	kafkaLogClient := kafka.NewProducer[dto.KafkaLogData](l, cfg.Kafka.Addr, cfg.Kafka.LogTopic, queueWriterMetrics)
 
 	defer kafkaLogClient.Close()
 

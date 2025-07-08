@@ -28,8 +28,8 @@ type pbServer struct {
 	auth         *authclient.Client
 	notification *notificationclient.Client
 	log          *logclient.Client
-	kafkaTask    *kafka.Client
-	kafkaLog     *kafka.Client
+	kafkaTask    *kafka.Producer[dto.KafkaTaskData]
+	kafkaLog     *kafka.Producer[dto.KafkaLogData]
 	redis        *redis.Client[dto.UserInfo]
 }
 

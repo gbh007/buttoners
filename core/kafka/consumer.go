@@ -20,7 +20,7 @@ type Consumer[T any] struct {
 	readerMetrics *metrics.QueueReaderMetrics
 
 	reader  *kafka.Reader
-	handler func(context.Context, T) error
+	handler func(context.Context, string, T) error
 
 	topic   string
 	groupID string
@@ -31,7 +31,7 @@ func NewConsumer[T any](
 	logger *slog.Logger,
 	addr, topic, groupID string,
 	readerMetrics *metrics.QueueReaderMetrics,
-	handler func(context.Context, T) error,
+	handler func(context.Context, string, T) error,
 ) *Consumer[T] {
 	c := &Consumer[T]{
 		logger:        logger,
@@ -157,7 +157,7 @@ func (c *Consumer[T]) read(ctx context.Context) (returnedErr error) {
 		return fmt.Errorf("%w: unmarshal: %w", ErrKafkaClient, err)
 	}
 
-	err = c.handler(ctx, v)
+	err = c.handler(ctx, string(msg.Key), v)
 	if err != nil {
 		return fmt.Errorf("%w: handle: %w", ErrKafkaClient, err)
 	}

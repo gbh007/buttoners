@@ -31,31 +31,21 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		return err
 	}
 
-	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
-	if err != nil {
-		return err
-	}
-
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
 	}
 
-	kafkaClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
-
-	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
-	if err != nil {
-		return err
-	}
-
-	defer kafkaClient.Close()
-
 	handler := &handler{
-		kafka:  kafkaClient,
 		db:     db,
 		tracer: otel.GetTracerProvider().Tracer(cfg.ServiceName),
 		logger: l,
 	}
+
+	kafkaClient := kafka.NewConsumer(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, queueReaderMetrics, handler.handle)
+	handler.kafka = kafkaClient
+
+	defer kafkaClient.Close()
 
 	server := &pbServer{
 		db: db,

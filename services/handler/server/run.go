@@ -6,7 +6,6 @@ import (
 
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
-	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/rabbitmq"
 	"go.opentelemetry.io/otel"
@@ -24,15 +23,6 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	if err != nil {
 		return err
 	}
-
-	kafkaClient := kafka.New(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, cfg.Kafka.NumPartitions, queueReaderMetrics, queueWriterMetrics)
-
-	err = kafkaClient.Connect(cfg.Kafka.NumPartitions > 0)
-	if err != nil {
-		return err
-	}
-
-	defer kafkaClient.Close()
 
 	rabbitClient := rabbitmq.New[dto.RabbitMQData](
 		l,
@@ -52,27 +42,18 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	defer rabbitClient.Close()
 
 	h := handler{
-		tracer: otel.GetTracerProvider().Tracer(cfg.ServiceName),
-		logger: l,
+		tracer:       otel.GetTracerProvider().Tracer(cfg.ServiceName),
+		logger:       l,
+		rabbitClient: rabbitClient,
 	}
 
-label1:
-	for {
-		data := new(dto.KafkaTaskData)
-		ctx, key, err := kafkaClient.Read(ctx, data)
-		if err != nil {
-			logger.LogWithMeta(l, ctx, slog.LevelWarn, "kafka read", "error", err.Error())
+	kafkaClient := kafka.NewConsumer(l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, queueReaderMetrics, func(ctx context.Context, key string, v dto.KafkaTaskData) error {
+		h.handle(ctx, key, &v)
 
-			select {
-			case <-ctx.Done():
-				break label1
-			default:
-				continue
-			}
-		}
+		return nil
+	})
 
-		h.handle(ctx, key, data, rabbitClient)
-	}
+	defer kafkaClient.Close()
 
-	return nil
+	return kafkaClient.Start(ctx)
 }

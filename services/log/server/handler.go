@@ -15,7 +15,7 @@ import (
 )
 
 type handler struct {
-	kafka *kafka.Client
+	kafka *kafka.Consumer[dto.KafkaLogData]
 
 	db *storage.Database
 
@@ -24,28 +24,10 @@ type handler struct {
 }
 
 func (h *handler) Run(ctx context.Context) error {
-label1:
-	for {
-		data := new(dto.KafkaLogData)
-		ctx, key, err := h.kafka.Read(ctx, data)
-		if err != nil {
-			logger.LogWithMeta(h.logger, ctx, slog.LevelError, "kafka read", "error", err.Error())
-
-			select {
-			case <-ctx.Done():
-				break label1
-			default:
-				continue
-			}
-		}
-
-		h.handle(ctx, key, data)
-	}
-
-	return nil
+	return h.kafka.Start(ctx)
 }
 
-func (h *handler) handle(ctx context.Context, key string, data *dto.KafkaLogData) {
+func (h *handler) handle(ctx context.Context, key string, data dto.KafkaLogData) error {
 	ctx, span := h.tracer.Start(ctx, "handle msg")
 	defer span.End()
 
@@ -84,4 +66,6 @@ func (h *handler) handle(ctx context.Context, key string, data *dto.KafkaLogData
 	}
 
 	registerHandleTime(time.Since(startTime))
+
+	return err
 }
