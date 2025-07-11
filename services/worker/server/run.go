@@ -27,32 +27,10 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		return err
 	}
 
-	queueWriterMetrics, err := metrics.NewQueueWriterMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
-	if err != nil {
-		return err
-	}
-
 	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
 	if err != nil {
 		return err
 	}
-
-	rabbitClient := rabbitmq.New[dto.RabbitMQData](
-		l,
-		cfg.RabbitMQ.Username,
-		cfg.RabbitMQ.Password,
-		cfg.RabbitMQ.Addr,
-		cfg.RabbitMQ.QueueName,
-		queueReaderMetrics,
-		queueWriterMetrics,
-	)
-
-	err = rabbitClient.Connect(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer rabbitClient.Close()
 
 	notificationClient, err := notificationclient.New(
 		l, otel.GetTracerProvider().Tracer("notification-client"), httpClientMetrics,
@@ -64,10 +42,29 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 
 	defer notificationClient.Close()
 
-	messages, err := rabbitClient.StartRead(ctx)
+	rn := &runner{
+		notification: notificationClient,
+		db:           db,
+		tracer:       otel.GetTracerProvider().Tracer(cfg.ServiceName),
+		logger:       l,
+	}
+
+	rabbitClient, err := rabbitmq.NewReader[dto.RabbitMQData](
+		l,
+		cfg.RabbitMQ.Username,
+		cfg.RabbitMQ.Password,
+		cfg.RabbitMQ.Addr,
+		cfg.RabbitMQ.QueueName,
+		queueReaderMetrics,
+		rn.handle,
+	)
 	if err != nil {
 		return err
 	}
+
+	defer rabbitClient.Close()
+
+	rn.rabbitClient = rabbitClient
 
 	runnerCtx, runnerCnl := context.WithCancel(context.TODO())
 	runnerWg := new(sync.WaitGroup)
@@ -75,17 +72,13 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 	for i := 0; i < cfg.RunnerCount; i++ {
 		runnerWg.Add(1)
 
-		r := &runner{
-			notification: notificationClient,
-			db:           db,
-			queue:        messages,
-			tracer:       otel.GetTracerProvider().Tracer(cfg.ServiceName),
-			logger:       l,
-		}
-
 		go func() {
 			defer runnerWg.Done()
-			r.run(runnerCtx)
+
+			rnErr := rn.run(runnerCtx)
+			if rnErr != nil {
+				l.Error("runner end unsuccessful", "error", rnErr.Error())
+			}
 		}()
 	}
 

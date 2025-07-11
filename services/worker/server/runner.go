@@ -21,34 +21,18 @@ type runner struct {
 	logger *slog.Logger
 
 	notification *notificationclient.Client
-	db           *storage.Database
-	queue        chan rabbitmq.Read[dto.RabbitMQData]
+	rabbitClient *rabbitmq.Reader[dto.RabbitMQData]
+
+	db *storage.Database
 }
 
-func (r *runner) run(ctx context.Context) {
-	for {
-		select {
-		case dataReader := <-r.queue:
-			r.handle(ctx, dataReader)
-
-		case <-ctx.Done():
-			if len(r.queue) == 0 {
-				return
-			}
-		}
-	}
+func (r *runner) run(ctx context.Context) error {
+	return r.rabbitClient.Start(ctx)
 }
 
-func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.RabbitMQData]) {
+func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) error {
 	activeTaskTotal.Inc()
 	defer activeTaskTotal.Dec()
-
-	ctx, data, err := dataReader(ctx)
-	if err != nil {
-		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "read from rabbitmq", "error", err.Error())
-
-		return
-	}
 
 	ctx, span := r.tracer.Start(ctx, "handle msg")
 	defer span.End()
@@ -80,6 +64,13 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 	businessEndTime := time.Now()
 
+	defer func() {
+		// Общее время выполнения
+		registerHandleTime(time.Since(startTime))
+		// Бизнесовое время выполнения
+		registerBusinessHandleTime(errText == "", businessEndTime.Sub(startTime))
+	}()
+
 	logger.LogWithMeta(r.logger, ctx, slog.LevelInfo, "finished", "data_request_id", data.RequestID, "notification", n)
 
 	dbCtx, dbCnl := context.WithTimeout(ctx, time.Second*5)
@@ -100,6 +91,8 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "insert result")
+
+		return err
 	}
 
 	notificationCtx, notificationCnl := context.WithTimeout(ctx, time.Second*10)
@@ -111,10 +104,9 @@ func (r *runner) handle(ctx context.Context, dataReader rabbitmq.Read[dto.Rabbit
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "new notification")
+
+		return err
 	}
 
-	// Общее время выполнения
-	registerHandleTime(time.Since(startTime))
-	// Бизнесовое время выполнения
-	registerBusinessHandleTime(errText == "", businessEndTime.Sub(startTime))
+	return nil
 }

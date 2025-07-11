@@ -24,17 +24,14 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		return err
 	}
 
-	rabbitClient := rabbitmq.New[dto.RabbitMQData](
+	rabbitClient, err := rabbitmq.NewWriter[dto.RabbitMQData](
 		l,
 		cfg.RabbitMQ.Username,
 		cfg.RabbitMQ.Password,
 		cfg.RabbitMQ.Addr,
 		cfg.RabbitMQ.QueueName,
-		queueReaderMetrics,
 		queueWriterMetrics,
 	)
-
-	err = rabbitClient.Connect(ctx)
 	if err != nil {
 		return err
 	}

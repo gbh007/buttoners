@@ -51,7 +51,7 @@ func Run(ctx context.Context, l *slog.Logger, cfg Config) error {
 		db: db,
 	}
 
-	fb := fiber.New()
+	fb := fiber.New(fiber.Config{DisableStartupMessage: true})
 	otelHandler := otelfiber.Middleware(
 		otelfiber.WithoutMetrics(true),
 	)

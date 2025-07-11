@@ -15,6 +15,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+const contentTypeJSON = "application/json"
+
 type Writer[T any] struct {
 	tracer        trace.Tracer
 	logger        *slog.Logger
@@ -57,6 +59,19 @@ func NewWriter[T any](
 	w.ch, err = w.conn.Channel()
 	if err != nil {
 		return nil, fmt.Errorf("%w: create channel: %w", ErrRabbitMQClient, err)
+	}
+
+	// FIXME: конфигурировать не в коде
+	_, err = w.ch.QueueDeclare(
+		w.queueName,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%w: create queue: %w", ErrRabbitMQClient, err)
 	}
 
 	return w, nil

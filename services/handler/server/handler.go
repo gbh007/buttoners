@@ -13,9 +13,9 @@ import (
 )
 
 type handler struct {
-	tracer trace.Tracer
-	logger *slog.Logger
-	rabbitClient *rabbitmq.Client[dto.RabbitMQData]
+	tracer       trace.Tracer
+	logger       *slog.Logger
+	rabbitClient *rabbitmq.Writer[dto.RabbitMQData]
 }
 
 func (h *handler) handle(
@@ -29,7 +29,7 @@ func (h *handler) handle(
 	rabbitCtx, rabbitCnl := context.WithTimeout(ctx, time.Second*10)
 	defer rabbitCnl()
 
-	err := h.rabbitClient.Write(rabbitCtx, dto.RabbitMQData{
+	err := h.rabbitClient.Write(rabbitCtx, key, dto.RabbitMQData{
 		RequestID: key,
 		UserID:    data.UserID,
 		Chance:    data.Chance,
