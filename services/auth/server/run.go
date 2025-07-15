@@ -2,16 +2,12 @@ package server
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
-	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/core/observability"
-	"github.com/gbh007/buttoners/core/redis"
-	"github.com/gbh007/buttoners/services/auth/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -28,38 +24,10 @@ type CommunicationConfig struct {
 	PrometheusAddress string
 }
 
-func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DBConfig, serviceName string) error {
-	go metrics.Run(l, metrics.Config{Addr: comCfg.PrometheusAddress})
+func (s *Server) Run(ctx context.Context) error {
+	go metrics.Run(s.logger, metrics.Config{Addr: s.comCfg.PrometheusAddress})
 
-	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
-	if err != nil {
-		return err
-	}
-
-	redisMetrics, err := metrics.NewRedisMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
-	if err != nil {
-		return err
-	}
-
-	redisClient := redis.New[dto.UserInfo](comCfg.RedisAddress)
-
-	err = redisClient.Connect(ctx, observability.NewRedisHook(l, redisMetrics, comCfg.RedisAddress, serviceName))
-	if err != nil {
-		return err
-	}
-
-	defer redisClient.Close()
-
-	db, err := storage.New(ctx, cfg.Username, cfg.Password, cfg.Addr, cfg.DatabaseName)
-	if err != nil {
-		return err
-	}
-
-	s := &server{
-		db:    db,
-		redis: redisClient,
-		token: comCfg.SelfToken,
-	}
+	defer s.Close(ctx)
 
 	router := chi.NewRouter()
 	router.Use(
@@ -73,8 +41,8 @@ func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DB
 	router.Post(authclient.InfoPath, s.Info)
 
 	server := &http.Server{
-		Addr:    comCfg.SelfAddress,
-		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(l, httpServerMetrics, "auth", router), serviceName),
+		Addr:    s.comCfg.SelfAddress,
+		Handler: otelhttp.NewHandler(observability.NewHTTPMiddleware(s.logger, s.httpServerMetrics, "auth", router), s.serviceName),
 	}
 
 	go func() {
@@ -83,7 +51,7 @@ func Run(ctx context.Context, l *slog.Logger, comCfg CommunicationConfig, cfg DB
 		server.Shutdown(sCtx)
 	}()
 
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,8 @@ import (
 func (s *Server) Run(ctx context.Context) error {
 	go metrics.Run(s.logger, metrics.Config{Addr: s.cfg.PrometheusAddress})
 
+	defer s.Close(ctx)
+
 	lis, err := net.Listen("tcp", s.cfg.SelfAddress)
 	if err != nil {
 		return err

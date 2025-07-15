@@ -55,9 +55,10 @@ func main() {
 	logger.LogWithMeta(l, ctx, slog.LevelInfo, "server start")
 	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
-	err = server.Run(
+	controller := server.New(l)
+
+	err = controller.Init(
 		ctx,
-		l,
 		server.CommunicationConfig{
 			SelfAddress:       cfg.Self.Addr,
 			SelfToken:         cfg.Self.Token,
@@ -72,6 +73,12 @@ func main() {
 		},
 		serviceName,
 	)
+	if err != nil {
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail server init", "error", err.Error())
+		os.Exit(1)
+	}
+
+	err = controller.Run(ctx)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server run result", "error", err.Error())
 		os.Exit(1)

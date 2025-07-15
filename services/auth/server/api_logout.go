@@ -6,7 +6,7 @@ import (
 	"github.com/gbh007/buttoners/core/clients/authclient"
 )
 
-func (s *server) Logout(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	req, err := unmarshal[authclient.LogoutRequest](r.Body)
