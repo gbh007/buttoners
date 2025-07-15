@@ -15,7 +15,7 @@ const cacheTTL = time.Minute * 5
 
 var errUnauthorized = errors.New("unauthorized")
 
-func (s *pbServer) authInfo(ctx context.Context) (*authclient.InfoResponse, error) {
+func (s *Server) authInfo(ctx context.Context) (*authclient.InfoResponse, error) {
 	info, ok := ctx.Value(userInfoKey).(*authclient.InfoResponse)
 	if !ok {
 		return nil, errUnauthorized
@@ -24,7 +24,7 @@ func (s *pbServer) authInfo(ctx context.Context) (*authclient.InfoResponse, erro
 	return info, nil
 }
 
-func (s *pbServer) authInfoRaw(ctx context.Context, token string) (*authclient.InfoResponse, error) {
+func (s *Server) authInfoRaw(ctx context.Context, token string) (*authclient.InfoResponse, error) {
 	redisStart := time.Now()
 
 	redisData, err := s.redis.Get(ctx, token)

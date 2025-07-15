@@ -58,24 +58,29 @@ func main() {
 	logger.LogWithMeta(l, ctx, slog.LevelInfo, "server start")
 	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
-	err = server.Run(
-		ctx,
-		l,
-		server.Config{
-			SelfAddress:         cfg.Self.Full(),
-			AuthService:         cfg.AuthService,
-			LogService:          cfg.LogService,
-			NotificationService: cfg.NotificationService,
-			RedisAddress:        cfg.RedisAddr,
-			PrometheusAddress:   cfg.PrometheusAddr,
-			Kafka: server.KafkaConfig{
-				Addr:          cfg.Kafka.Addr,
-				TaskTopic:     cfg.Kafka.TaskTopic,
-				LogTopic:      cfg.Kafka.LogTopic,
-				NumPartitions: cfg.Kafka.NumPartitions,
-			},
+	serverCfg := server.Config{
+		SelfAddress:         cfg.Self.Full(),
+		AuthService:         cfg.AuthService,
+		LogService:          cfg.LogService,
+		NotificationService: cfg.NotificationService,
+		RedisAddress:        cfg.RedisAddr,
+		PrometheusAddress:   cfg.PrometheusAddr,
+		Kafka: server.KafkaConfig{
+			Addr:          cfg.Kafka.Addr,
+			TaskTopic:     cfg.Kafka.TaskTopic,
+			LogTopic:      cfg.Kafka.LogTopic,
+			NumPartitions: cfg.Kafka.NumPartitions,
 		},
-	)
+	}
+
+	server := server.New(l)
+	err = server.Init(ctx, serverCfg)
+	if err != nil {
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail server init", "error", err.Error())
+		os.Exit(1)
+	}
+
+	err = server.Run(ctx)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server run result", "error", err.Error())
 		os.Exit(1)
