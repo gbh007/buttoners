@@ -49,6 +49,7 @@ func (s *Server) Init(ctx context.Context, cfg Config) error {
 	s.httpServerMetrics = httpServerMetrics
 	s.tracer = otel.GetTracerProvider().Tracer(cfg.ServiceName)
 	s.kafka = kafkaClient
+	s.cfg = cfg
 
 	return nil
 }
