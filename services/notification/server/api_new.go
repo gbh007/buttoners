@@ -10,7 +10,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func (s *server) New(ctx context.Context, rc *fasthttp.RequestCtx) {
+func (s *Server) New(ctx context.Context, rc *fasthttp.RequestCtx) {
 	req, err := unmarshal[notificationclient.NewRequest](rc.Request.Body())
 	if err != nil {
 		rc.SetStatusCode(http.StatusBadRequest)

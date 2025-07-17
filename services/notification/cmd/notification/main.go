@@ -54,21 +54,27 @@ func main() {
 	logger.LogWithMeta(l, ctx, slog.LevelInfo, "server start")
 	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
-	err = server.Run(
-		ctx,
-		l,
-		server.Config{
-			SelfAddress:       cfg.Self.Addr,
-			SelfToken:         cfg.Self.Token,
-			PrometheusAddress: cfg.PrometheusAddr,
-			DB: server.DBConfig{
-				Username:     cfg.DB.User,
-				Password:     cfg.DB.Pass,
-				Addr:         cfg.DB.Addr,
-				DatabaseName: cfg.DB.Name,
-			},
+	srvConf := server.Config{
+		SelfAddress:       cfg.Self.Addr,
+		SelfToken:         cfg.Self.Token,
+		PrometheusAddress: cfg.PrometheusAddr,
+		DB: server.DBConfig{
+			Username:     cfg.DB.User,
+			Password:     cfg.DB.Pass,
+			Addr:         cfg.DB.Addr,
+			DatabaseName: cfg.DB.Name,
 		},
-	)
+	}
+
+	server := server.New(l)
+
+	err = server.Init(ctx, srvConf)
+	if err != nil {
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail server init", "error", err.Error())
+		os.Exit(1)
+	}
+
+	err = server.Run(ctx)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "unsuccess server run result", "error", err.Error())
 		os.Exit(1)
