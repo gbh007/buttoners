@@ -9,32 +9,16 @@ import (
 	"github.com/gbh007/buttoners/core/clients/notificationclient"
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/logger"
-	"github.com/gbh007/buttoners/core/rabbitmq"
 	"github.com/gbh007/buttoners/services/worker/internal/storage"
 
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
-type runner struct {
-	tracer trace.Tracer
-	logger *slog.Logger
-
-	notification *notificationclient.Client
-	rabbitClient *rabbitmq.Reader[dto.RabbitMQData]
-
-	db *storage.Database
-}
-
-func (r *runner) run(ctx context.Context) error {
-	return r.rabbitClient.Start(ctx)
-}
-
-func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) error {
+func (s *Server) handle(ctx context.Context, key string, data dto.RabbitMQData) error {
 	activeTaskTotal.Inc()
 	defer activeTaskTotal.Dec()
 
-	ctx, span := r.tracer.Start(ctx, "handle msg")
+	ctx, span := s.tracer.Start(ctx, "handle msg")
 	defer span.End()
 
 	startTime := time.Now()
@@ -46,7 +30,7 @@ func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) 
 
 	errText := ""
 
-	result, resultText, err := r.someBusinessLogic(ctx, data.Duration, data.Chance)
+	result, resultText, err := s.someBusinessLogic(ctx, data.Duration, data.Chance)
 	if err != nil {
 		n.Level = "error"
 		n.Title = "Ошибка"
@@ -71,12 +55,12 @@ func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) 
 		registerBusinessHandleTime(errText == "", businessEndTime.Sub(startTime))
 	}()
 
-	logger.LogWithMeta(r.logger, ctx, slog.LevelInfo, "finished", "data_request_id", data.RequestID, "notification", n)
+	logger.LogWithMeta(s.logger, ctx, slog.LevelInfo, "finished", "data_request_id", data.RequestID, "notification", n)
 
 	dbCtx, dbCnl := context.WithTimeout(ctx, time.Second*5)
 	defer dbCnl()
 
-	err = r.db.InsertTaskResult(dbCtx, &storage.TaskResult{
+	err = s.db.InsertTaskResult(dbCtx, &storage.TaskResult{
 		UserID:     data.UserID,
 		Chance:     data.Chance,
 		Duration:   data.Duration,
@@ -87,7 +71,7 @@ func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) 
 		EndTime:    businessEndTime,
 	})
 	if err != nil {
-		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "write to task result", "error", err.Error(), "data_request_id", data.RequestID)
+		logger.LogWithMeta(s.logger, ctx, slog.LevelError, "write to task result", "error", err.Error(), "data_request_id", data.RequestID)
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "insert result")
@@ -98,9 +82,9 @@ func (r *runner) handle(ctx context.Context, key string, data dto.RabbitMQData) 
 	notificationCtx, notificationCnl := context.WithTimeout(ctx, time.Second*10)
 	defer notificationCnl()
 
-	err = r.notification.New(notificationCtx, n)
+	err = s.notification.New(notificationCtx, n)
 	if err != nil {
-		logger.LogWithMeta(r.logger, ctx, slog.LevelError, "send notification", "error", err.Error(), "data_request_id", data.RequestID)
+		logger.LogWithMeta(s.logger, ctx, slog.LevelError, "send notification", "error", err.Error(), "data_request_id", data.RequestID)
 
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "new notification")
