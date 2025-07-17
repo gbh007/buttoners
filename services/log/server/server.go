@@ -1,50 +1,54 @@
 package server
 
 import (
-	"net/http"
+	"context"
+	"log/slog"
 
-	"github.com/gbh007/buttoners/core/clients/logclient"
+	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/kafka"
+	"github.com/gbh007/buttoners/core/metrics"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
-	"github.com/gofiber/fiber/v2"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
-type pbServer struct {
-	db *storage.Database
+type Server struct {
+	db                *storage.Database
+	l                 *slog.Logger
+	tracer            trace.Tracer
+	cfg               Config
+	kafka             *kafka.Consumer[dto.KafkaLogData]
+	httpServerMetrics *metrics.HTTPServerMetrics
 }
 
-func (s *pbServer) Activity(c *fiber.Ctx) error {
-	var req logclient.ActivityRequest
+func New(l *slog.Logger) *Server {
+	return &Server{
+		l: l,
+	}
+}
 
-	err := c.BodyParser(&req)
+func (s *Server) Init(ctx context.Context, cfg Config) error {
+	httpServerMetrics, err := metrics.NewHTTPServerMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
-		c.Set(fiber.HeaderContentType, logclient.ContentType)
-
-		return c.
-			Status(http.StatusBadRequest).
-			JSON(logclient.ErrorResponse{
-				Code:    "parse",
-				Details: err.Error(),
-			})
+		return err
 	}
 
-	count, last, err := s.db.SelectCompressedUserLogByUserID(c.UserContext(), req.UserID)
+	queueReaderMetrics, err := metrics.NewQueueReaderMetrics(metrics.DefaultRegistry, metrics.DefaultTimeBuckets)
 	if err != nil {
-		c.Set(fiber.HeaderContentType, logclient.ContentType)
-
-		return c.
-			Status(http.StatusInternalServerError).
-			JSON(logclient.ErrorResponse{
-				Code:    "logic",
-				Details: err.Error(),
-			})
+		return err
 	}
 
-	c.Set(fiber.HeaderContentType, logclient.ContentType)
+	db, err := storage.Init(ctx, cfg.DB.Username, cfg.DB.Password, cfg.DB.Addr, cfg.DB.DatabaseName)
+	if err != nil {
+		return err
+	}
 
-	return c.
-		Status(http.StatusOK).
-		JSON(logclient.ActivityResponse{
-			RequestCount: count,
-			LastRequest:  last,
-		})
+	kafkaClient := kafka.NewConsumer(s.l, cfg.Kafka.Addr, cfg.Kafka.Topic, cfg.Kafka.GroupID, queueReaderMetrics, s.handle)
+
+	s.db = db
+	s.httpServerMetrics = httpServerMetrics
+	s.tracer = otel.GetTracerProvider().Tracer(cfg.ServiceName)
+	s.kafka = kafkaClient
+
+	return nil
 }

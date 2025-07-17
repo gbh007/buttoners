@@ -7,28 +7,13 @@ import (
 	"time"
 
 	"github.com/gbh007/buttoners/core/dto"
-	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/services/log/internal/storage"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
-type handler struct {
-	kafka *kafka.Consumer[dto.KafkaLogData]
-
-	db *storage.Database
-
-	tracer trace.Tracer
-	logger *slog.Logger
-}
-
-func (h *handler) Run(ctx context.Context) error {
-	return h.kafka.Start(ctx)
-}
-
-func (h *handler) handle(ctx context.Context, key string, data dto.KafkaLogData) error {
-	ctx, span := h.tracer.Start(ctx, "handle msg")
+func (s *Server) handle(ctx context.Context, key string, data dto.KafkaLogData) error {
+	ctx, span := s.tracer.Start(ctx, "handle msg")
 	defer span.End()
 
 	startTime := time.Now()
@@ -36,7 +21,7 @@ func (h *handler) handle(ctx context.Context, key string, data dto.KafkaLogData)
 	dbCtx, dbCnl := context.WithTimeout(ctx, time.Second*5)
 	defer dbCnl()
 
-	err := h.db.InsertUserLog(dbCtx, &storage.UserLog{
+	err := s.db.InsertUserLog(dbCtx, &storage.UserLog{
 		RequestID: key,
 		Addr:      data.Addr,
 		UserID: sql.NullInt64{
@@ -62,7 +47,7 @@ func (h *handler) handle(ctx context.Context, key string, data dto.KafkaLogData)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "handle error")
 
-		logger.LogWithMeta(h.logger, ctx, slog.LevelError, "add user log", "error", err.Error(), "msg_key", key)
+		logger.LogWithMeta(s.l, ctx, slog.LevelError, "add user log", "error", err.Error(), "msg_key", key)
 	}
 
 	registerHandleTime(time.Since(startTime))
