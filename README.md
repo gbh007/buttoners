@@ -1,3 +1,3 @@
 # Buttoners
 
-![C4](./schema.svg)
+![C4](./scheme.drawio.png)
