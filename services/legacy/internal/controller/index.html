@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Baton nagimator</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+    </style>
+    <script>
+      const app = Vue.createApp({
+        setup() {
+          const appState = Vue.reactive({
+            user: {},
+            buttons: [],
+            unauthorized: true,
+          });
+
+          async function createUser() {
+            axios
+              .post("/api/user")
+              .then(function (response) {
+                getUser();
+              })
+              .catch(function (error) {
+                console.log(error);
+              });
+          }
+
+          async function getUser() {
+            axios
+              .get("/api/user")
+              .then(function (response) {
+                const data = response.data;
+                appState.user = data;
+                appState.unauthorized = false;
+                getButtons();
+              })
+              .catch(function (error) {
+                if (error.response.status == 401) {
+                  appState.unauthorized = true;
+                  return;
+                }
+
+                console.log(error);
+              });
+          }
+
+          async function pressButton() {
+            axios
+              .post("/api/button")
+              .then(function (response) {
+                console.log(response.data);
+                getButtons();
+              })
+              .catch(function (error) {
+                console.log(error);
+              });
+          }
+
+          async function getButtons() {
+            axios
+              .get("/api/button")
+              .then(function (response) {
+                const data = response.data;
+                appState.buttons = data;
+              })
+              .catch(function (error) {
+                console.log(error);
+              });
+          }
+
+          Vue.onBeforeMount(() => {
+            getUser();
+          });
+
+          return {
+            appState,
+            createUser,
+            getUser,
+            pressButton,
+            getButtons,
+          };
+        },
+      });
+
+      window.addEventListener("load", async function () {
+        app.mount("#app");
+      });
+    </script>
+  </head>
+  <body id="app">
+    <div
+      v-if="appState.unauthorized"
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        font-size: larger;
+        text-align: center;
+      "
+    >
+      <b>Кто ты такой?</b>
+      <button @click="createUser" style="padding: 5px">
+        Любитель нажимать на кнопку ❤️
+      </button>
+    </div>
+    <div v-else style="display: flex; flex-direction: column; gap: 20px">
+      <i style="text-align: center">Привет {{appState.user.name}}</i>
+      <button @click="pressButton" style="font-size: xxx-large; padding: 5px">
+        🥖 Нажми меня
+      </button>
+      <div
+        style="
+          font-size: large;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        "
+      >
+        <span
+          v-for="button in appState.buttons"
+          style="display: flex; justify-content: space-between"
+        >
+          <span>{{button.text}}</span>
+          <span>{{button.count}}</span>
+        </span>
+      </div>
+    </div>
+  </body>
+</html>
