@@ -59,3 +59,4 @@ tidy:
 		echo $$path; \
 		go mod tidy; \
 	done
+	go work sync
