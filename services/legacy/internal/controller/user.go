@@ -38,7 +38,7 @@ func (c Controller) GetUser(ctx *fasthttp.RequestCtx) {
 }
 
 func (c Controller) CreateUser(ctx *fasthttp.RequestCtx) {
-	user, err := c.userSevice.CreateUser(ctx)
+	user, err := c.userSevice.CreateUser(ctx, "", "")
 	if err != nil {
 		ctx.SetStatusCode(http.StatusInternalServerError)
 		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{

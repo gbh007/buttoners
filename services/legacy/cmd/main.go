@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/gbh007/buttoners/services/legacy/internal/controller"
 	"context"
 	"flag"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/gbh007/buttoners/services/legacy/internal/controller"
 )
 
 func main() {
@@ -31,12 +32,17 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: ll}))
 
+	// FIXME: config
 	c, err := controller.New(
 		logger,
-		*addr,
-		*debug,
-		*dbType,
-		*conn,
+		controller.Config{
+			APIAddr:   *addr,
+			Debug:     *debug,
+			DBType:    *dbType,
+			DBDNS:     *conn,
+			AuthAddr:  "",
+			AuthToken: "",
+		},
 	)
 	if err != nil {
 		logger.Error("create controller", "error", err)

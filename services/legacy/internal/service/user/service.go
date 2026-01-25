@@ -1,38 +1,48 @@
 package user
 
 import (
-	"github.com/gbh007/buttoners/services/legacy/internal/domain"
-	"github.com/gbh007/buttoners/services/legacy/internal/repository"
 	"context"
-	"crypto/md5"
-	"encoding/hex"
-	"time"
+	"fmt"
+
+	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/services/legacy/internal/domain"
 )
 
 type Service struct {
-	repo       *repository.Repository
 	randomizer *domain.Randomizer
+	authClient *authclient.Client
 }
 
-func New(repo *repository.Repository) *Service {
+func New(authClient *authclient.Client) *Service {
 	return &Service{
-		repo:       repo,
+		authClient: authClient,
 		randomizer: domain.NewRandomizer(),
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context) (domain.User, error) {
-	token := md5.Sum([]byte(time.Now().String()))
-
+func (s *Service) CreateUser(ctx context.Context, login string, pass string) (domain.User, error) {
 	u := domain.User{
-		Name:  s.randomizer.Name(),
-		Token: hex.EncodeToString(token[:]),
+		Name: login,
 	}
 
-	err := s.repo.SetUser(ctx, u)
+	err := s.authClient.Register(ctx, login, pass)
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("register: %w", err)
 	}
+
+	session, err := s.authClient.Login(ctx, login, pass)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("login: %w", err)
+	}
+
+	u.Token = session.Token
+
+	info, err := s.authClient.Info(ctx, u.Token)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("info: %w", err)
+	}
+
+	u.ID = int(info.UserID)
 
 	return u, nil
 }
@@ -42,10 +52,13 @@ func (s *Service) GetUser(ctx context.Context, token string) (domain.User, error
 		Token: token,
 	}
 
-	err := s.repo.GetUserByToken(ctx, &u)
+	info, err := s.authClient.Info(ctx, u.Token)
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("info: %w", err)
 	}
+
+	u.ID = int(info.UserID)
+	u.Name = info.Login
 
 	return u, nil
 }

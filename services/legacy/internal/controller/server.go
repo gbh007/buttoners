@@ -1,15 +1,18 @@
 package controller
 
 import (
-	"github.com/gbh007/buttoners/services/legacy/internal/metrics"
-	"github.com/gbh007/buttoners/services/legacy/internal/repository"
-	"github.com/gbh007/buttoners/services/legacy/internal/service/button"
-	"github.com/gbh007/buttoners/services/legacy/internal/service/user"
 	"context"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/services/legacy/internal/metrics"
+	"github.com/gbh007/buttoners/services/legacy/internal/repository"
+	"github.com/gbh007/buttoners/services/legacy/internal/service/button"
+	"github.com/gbh007/buttoners/services/legacy/internal/service/user"
+
+	cMetrics "github.com/gbh007/buttoners/core/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -36,18 +39,38 @@ type Controller struct {
 	handleMetrics fasthttp.RequestHandler
 }
 
-func New(logger *slog.Logger, addr string, debug bool, dbType, dbDNS string) (*Controller, error) {
-	repo, err := repository.New(logger, dbType, dbDNS)
+type Config struct {
+	APIAddr string
+	Debug   bool
+	DBType  string
+	DBDNS   string
+
+	AuthAddr  string
+	AuthToken string
+}
+
+func New(logger *slog.Logger, cfg Config) (*Controller, error) {
+	repo, err := repository.New(logger, cfg.DBType, cfg.DBDNS)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClientMetrics, err := cMetrics.NewHTTPClientMetrics(cMetrics.DefaultRegistry, cMetrics.DefaultTimeBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	authClient, err := authclient.New(logger, httpClientMetrics, cfg.AuthAddr, cfg.AuthToken, cMetrics.InstanceName)
 	if err != nil {
 		return nil, err
 	}
 
 	buttonService := button.New(repo)
-	userSevice := user.New(repo)
+	userSevice := user.New(authClient)
 
 	return &Controller{
-		addr:  addr,
-		debug: debug,
+		addr:  cfg.APIAddr,
+		debug: cfg.Debug,
 
 		logger: logger,
 

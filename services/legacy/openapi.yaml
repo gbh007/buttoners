@@ -1,0 +1,218 @@
+openapi: 3.0.0
+
+info:
+  title: Legacy service
+  version: 0.0.0
+
+servers:
+  - url: http://localhost:8080/
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/v1/user:
+    post:
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - login
+                - password
+              properties:
+                login:
+                  type: string
+                password:
+                  type: string
+
+      responses:
+        200:
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                required:
+                  - token
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+      responses:
+        204:
+          description: Успешный разлогин
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - login
+                - password
+              properties:
+                login:
+                  type: string
+                password:
+                  type: string
+
+      responses:
+        204:
+          description: Успешная регистрация
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+      responses:
+        200:
+          description: Успешное получение информации
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    type: string
+                  user_id:
+                    type: integer
+                    format: int64
+                required:
+                  - login
+                  - user_id
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/button:
+    post:
+      responses:
+        200:
+          description: Успешное нажатие на кнопку
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Button"
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      responses:
+        200:
+          description: Данные о нажатиях на кнопку
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Button"
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/button/power:
+    get:
+      parameters:
+        - name: user
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Данные о нажатиях на кнопку
+          content:
+            image/svg+xml: {}
+        default:
+          description: Некорректный запрос или произошла ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Данные ошибки
+      properties:
+        code:
+          type: string
+          description: Внутренний код ошибки
+        details:
+          type: string
+          description: Детальные данные ошибки
+      required:
+        - code
+    Button:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        day:
+          type: integer
+        count:
+          type: integer
+          format: int64
+        text:
+          type: string
+      required:
+        - year
+        - month
+        - day
+        - count
+        - text
+
+  securitySchemes:
+    cookieAuth:
+      name: baton-session
+      in: cookie
+      type: apiKey
