@@ -23,7 +23,6 @@ type Config struct {
 }
 
 func main() {
-
 	ctx, cancelNotify := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGHUP,

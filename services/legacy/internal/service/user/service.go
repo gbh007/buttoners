@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
@@ -26,7 +27,7 @@ func (s *Service) CreateUser(ctx context.Context, login string, pass string) (do
 	}
 
 	err := s.authClient.Register(ctx, login, pass)
-	if err != nil {
+	if err != nil && !errors.Is(err, authclient.ErrConflict) {
 		return domain.User{}, fmt.Errorf("register: %w", err)
 	}
 
@@ -61,4 +62,13 @@ func (s *Service) GetUser(ctx context.Context, token string) (domain.User, error
 	u.Name = info.Login
 
 	return u, nil
+}
+
+func (s *Service) Logout(ctx context.Context, token string) error {
+	err := s.authClient.Logout(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

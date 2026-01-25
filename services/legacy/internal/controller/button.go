@@ -1,110 +1,75 @@
 package controller
 
 import (
-	"errors"
+	"bytes"
 	"net/http"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/valyala/fasthttp"
-	"gorm.io/gorm"
+	"github.com/labstack/echo/v4"
 )
 
-func (c *Controller) PressButton(ctx *fasthttp.RequestCtx) {
-	token := string(ctx.Request.Header.Cookie(userSessionCookieName))
+func (cnt Controller) pressButton(c echo.Context) error {
+	ctx := c.Request().Context()
 
-	user, err := c.userSevice.GetUser(ctx, token)
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.SetStatusCode(http.StatusUnauthorized)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: "user not found",
-		})
-
-		return
-	}
-
+	cookie, err := c.Cookie(userSessionCookieName)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	b, err := c.buttonService.PressButton(ctx, user)
+	user, err := cnt.userSevice.GetUser(ctx, cookie.Value)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	ctx.SetStatusCode(http.StatusOK)
-	_ = jsoniter.NewEncoder(ctx).Encode(b)
+	b, err := cnt.buttonService.PressButton(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, b)
 }
 
-func (c *Controller) Buttons(ctx *fasthttp.RequestCtx) {
-	token := string(ctx.Request.Header.Cookie(userSessionCookieName))
+func (cnt Controller) buttons(c echo.Context) error {
+	ctx := c.Request().Context()
 
-	user, err := c.userSevice.GetUser(ctx, token)
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.SetStatusCode(http.StatusUnauthorized)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: "user not found",
-		})
-
-		return
-	}
-
+	cookie, err := c.Cookie(userSessionCookieName)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	buttons, err := c.buttonService.Buttons(ctx, user)
+	user, err := cnt.userSevice.GetUser(ctx, cookie.Value)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	ctx.SetStatusCode(http.StatusOK)
-	_ = jsoniter.NewEncoder(ctx).Encode(buttons)
+	b, err := cnt.buttonService.Buttons(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, b)
 }
 
-func (c *Controller) ButtonPower(ctx *fasthttp.RequestCtx) {
-	id, err := ctx.QueryArgs().GetUint("user")
-	if err != nil {
-		ctx.SetStatusCode(http.StatusBadRequest)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
+func (cnt Controller) buttonPower(c echo.Context) error {
+	ctx := c.Request().Context()
 
-		return
+	var req buttonPowerRequest
+
+	err := c.Bind(req)
+	if err != nil {
+		return err
 	}
 
-	err = c.buttonService.ButtonBadge(ctx, ctx, id)
+	err = c.Validate(req)
 	if err != nil {
-		ctx.ResetBody()
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	ctx.SetStatusCode(http.StatusOK)
-	ctx.SetContentType("image/svg+xml")
+	buff := new(bytes.Buffer)
+
+	err = cnt.buttonService.ButtonBadge(ctx, buff, req.User)
+	if err != nil {
+		return err
+	}
+
+	return c.Blob(http.StatusOK, "image/svg+xml", buff.Bytes())
 }

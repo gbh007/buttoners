@@ -2,21 +2,24 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/gbh007/buttoners/core/logger"
+	"github.com/gbh007/buttoners/core/metrics"
+	"github.com/gbh007/buttoners/core/tracer"
 	"github.com/gbh007/buttoners/services/legacy/internal/controller"
+	"github.com/kelseyhightower/envconfig"
 )
 
+type Config struct{}
+
 func main() {
-	addr := flag.String("addr", ":8080", "web server address")
-	debug := flag.Bool("d", false, "debug mode")
-	dbType := flag.String("db", "sqlite", "db type sqlite, postgres, mysql")
-	conn := flag.String("conn", "test.db", "db connection string")
-	flag.Parse()
+	cfg := controller.Config{}
+
+	envconfig.MustProcess("", &cfg)
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -25,37 +28,32 @@ func main() {
 	)
 	defer cancel()
 
-	ll := slog.LevelInfo
-	if *debug {
-		ll = slog.LevelDebug
-	}
+	const serviceName = "legacy"
 
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: ll}))
+	l := logger.New(serviceName, "debug") // FIXME: level
+	metrics.InstanceName = serviceName
 
-	// FIXME: config
-	c, err := controller.New(
-		logger,
-		controller.Config{
-			APIAddr:   *addr,
-			Debug:     *debug,
-			DBType:    *dbType,
-			DBDNS:     *conn,
-			AuthAddr:  "",
-			AuthToken: "",
-		},
-	)
+	_, _, err := tracer.InitTracer(cfg.JaegerURL, metrics.InstanceName)
 	if err != nil {
-		logger.Error("create controller", "error", err)
+		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
 	}
 
-	logger.Info("start server")
+	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddr})
+
+	c, err := controller.New(l, cfg)
+	if err != nil {
+		l.Error("create controller", "error", err)
+		os.Exit(1)
+	}
+
+	l.Info("start server")
 
 	err = c.Serve(ctx)
 	if err != nil {
-		logger.Error("serve http", "error", err)
+		l.Error("serve http", "error", err)
 		os.Exit(1)
 	}
 
-	logger.Info("have a nice day")
+	l.Info("have a nice day")
 }

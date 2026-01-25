@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"github.com/gbh007/buttoners/services/legacy/internal/domain"
 	"fmt"
 	"log/slog"
+
+	"github.com/gbh007/buttoners/services/legacy/internal/domain"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
@@ -39,7 +40,6 @@ func New(lg *slog.Logger, dbType, dbDNS string) (*Repository, error) {
 	}
 
 	err = db.AutoMigrate(
-		&domain.User{},
 		&domain.Button{},
 	)
 	if err != nil {

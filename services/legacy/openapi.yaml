@@ -29,17 +29,8 @@ paths:
                   type: string
 
       responses:
-        200:
-          description: Успешная авторизация
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                required:
-                  - token
+        204:
+          description: Успешная авторизация/регистрация
         default:
           description: Некорректный запрос или произошла ошибка
           content:
@@ -47,16 +38,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - token
-              properties:
-                token:
-                  type: string
       responses:
         204:
           description: Успешный разлогин
@@ -66,42 +47,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    put:
-      security: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - login
-                - password
-              properties:
-                login:
-                  type: string
-                password:
-                  type: string
-
-      responses:
-        204:
-          description: Успешная регистрация
-        default:
-          description: Некорректный запрос или произошла ошибка
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
     get:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - token
-              properties:
-                token:
-                  type: string
       responses:
         200:
           description: Успешное получение информации
@@ -158,6 +104,7 @@ paths:
 
   /api/v1/button/power:
     get:
+      security: []
       parameters:
         - name: user
           in: query
@@ -182,14 +129,11 @@ components:
       type: object
       description: Данные ошибки
       properties:
-        code:
-          type: string
-          description: Внутренний код ошибки
-        details:
+        message:
           type: string
           description: Детальные данные ошибки
       required:
-        - code
+        - message
     Button:
       type: object
       properties:

@@ -1,59 +1,81 @@
 package controller
 
 import (
-	"errors"
 	"net/http"
+	"time"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/valyala/fasthttp"
-	"gorm.io/gorm"
+	"github.com/labstack/echo/v4"
 )
 
-const userSessionCookieName = "baton-session"
+func (cnt Controller) createUser(c echo.Context) error {
+	ctx := c.Request().Context()
 
-func (c Controller) GetUser(ctx *fasthttp.RequestCtx) {
-	token := string(ctx.Request.Header.Cookie(userSessionCookieName))
+	var req loginRequest
 
-	user, err := c.userSevice.GetUser(ctx, token)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.SetStatusCode(http.StatusUnauthorized)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: "user not found",
-		})
-
-		return
-	}
-
+	err := c.Bind(req)
 	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
-
-		return
+		return err
 	}
 
-	ctx.SetStatusCode(http.StatusOK)
-	_ = jsoniter.NewEncoder(ctx).Encode(user)
+	err = c.Validate(req)
+	if err != nil {
+		return err
+	}
+
+	user, err := cnt.userSevice.CreateUser(ctx, req.Login, req.Pass)
+	if err != nil {
+		return err
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     userSessionCookieName,
+		Value:    user.Token,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (c Controller) CreateUser(ctx *fasthttp.RequestCtx) {
-	user, err := c.userSevice.CreateUser(ctx, "", "")
-	if err != nil {
-		ctx.SetStatusCode(http.StatusInternalServerError)
-		_ = jsoniter.NewEncoder(ctx).Encode(&errorModel{
-			Message: err.Error(),
-		})
+func (cnt Controller) logout(c echo.Context) error {
+	ctx := c.Request().Context()
 
-		return
+	cookie, err := c.Cookie(userSessionCookieName)
+	if err != nil {
+		return err
 	}
 
-	cookie := fasthttp.Cookie{}
-	cookie.SetHTTPOnly(true)
-	cookie.SetKey(userSessionCookieName)
-	cookie.SetPath("/")
-	cookie.SetValue(user.Token)
-	ctx.Response.Header.SetCookie(&cookie)
+	err = cnt.userSevice.Logout(ctx, cookie.Value)
+	if err != nil {
+		return err
+	}
 
-	ctx.SetStatusCode(http.StatusNoContent)
+	c.SetCookie(&http.Cookie{
+		Name:     userSessionCookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Now(),
+		HttpOnly: true,
+	})
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (cnt Controller) getUser(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	cookie, err := c.Cookie(userSessionCookieName)
+	if err != nil {
+		return err
+	}
+
+	user, err := cnt.userSevice.GetUser(ctx, cookie.Value)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"login":   user.Name,
+		"user_id": user.ID,
+	})
 }
