@@ -9,18 +9,17 @@ import (
 )
 
 const (
-	namespace = "buttoners"
 	subsystem = "example_baton_nagimator" // прим. оставлено специально
 )
 
 var (
 	httpDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace: namespace,
+		Namespace: metrics.MetricsNamespace,
 		Subsystem: subsystem,
 		Name:      "http_seconds",
 	}, []string{"path", "method", "code"})
 	buttonLoversTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: namespace,
+		Namespace: metrics.MetricsNamespace,
 		Subsystem: subsystem,
 		Name:      "button_lovers_total",
 	}, []string{"name"})

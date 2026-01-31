@@ -73,12 +73,8 @@ paths:
   /api/v1/button:
     post:
       responses:
-        200:
+        204:
           description: Успешное нажатие на кнопку
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Button"
         default:
           description: Некорректный запрос или произошла ошибка
           content:

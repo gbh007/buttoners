@@ -3,11 +3,9 @@ package server
 import "github.com/gbh007/buttoners/core/config"
 
 type KafkaConfig struct {
-	TaskTopic     string
-	LogTopic      string
-	GroupID       string
-	Addr          string
-	NumPartitions int
+	TaskTopic string
+	LogTopic  string
+	Addr      string
 }
 
 type Config struct {

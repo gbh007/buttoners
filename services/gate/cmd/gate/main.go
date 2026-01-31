@@ -66,10 +66,9 @@ func main() {
 		RedisAddress:        cfg.RedisAddr,
 		PrometheusAddress:   cfg.PrometheusAddr,
 		Kafka: server.KafkaConfig{
-			Addr:          cfg.Kafka.Addr,
-			TaskTopic:     cfg.Kafka.TaskTopic,
-			LogTopic:      cfg.Kafka.LogTopic,
-			NumPartitions: cfg.Kafka.NumPartitions,
+			Addr:      cfg.Kafka.Addr,
+			TaskTopic: cfg.Kafka.TaskTopic,
+			LogTopic:  cfg.Kafka.LogTopic,
 		},
 	}
 

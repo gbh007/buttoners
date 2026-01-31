@@ -20,12 +20,12 @@ func (cnt Controller) pressButton(c echo.Context) error {
 		return err
 	}
 
-	b, err := cnt.buttonService.PressButton(ctx, user)
+	err = cnt.buttonService.PressButton(ctx, user)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, b)
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (cnt Controller) buttons(c echo.Context) error {

@@ -7,28 +7,50 @@ import (
 	"slices"
 	"time"
 
+	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/kafka"
 	"github.com/gbh007/buttoners/services/legacy/internal/domain"
 	"github.com/gbh007/buttoners/services/legacy/internal/metrics"
 	"github.com/gbh007/buttoners/services/legacy/internal/repository"
+	"github.com/segmentio/ksuid"
 
 	"gorm.io/gorm"
 )
 
 type Service struct {
-	repo *repository.Repository
+	repo            *repository.Repository
+	kafkaTaskClient *kafka.Producer[dto.KafkaTaskData]
 }
 
-func New(repo *repository.Repository) *Service {
+func New(repo *repository.Repository, kafkaTaskClient *kafka.Producer[dto.KafkaTaskData]) *Service {
 	return &Service{
-		repo: repo,
+		repo:            repo,
+		kafkaTaskClient: kafkaTaskClient,
 	}
 }
 
-func (s *Service) PressButton(ctx context.Context, user domain.User) (domain.Button, error) {
+func (s *Service) PressButton(ctx context.Context, user domain.User) error {
+	key := ksuid.New().String()
+
+	err := s.kafkaTaskClient.Write(ctx, key, dto.KafkaTaskData{
+		UserID:   int64(user.ID),
+		Chance:   50,
+		Duration: 1,
+	})
+	if err != nil {
+		return err
+	}
+
+	metrics.RecordButtonPress(user.Name)
+
+	return nil
+}
+
+func (s *Service) ConsumePressButton(ctx context.Context, userID int) error {
 	y, m, d := time.Now().Date()
 
 	b := domain.Button{
-		UserID: user.ID,
+		UserID: userID,
 		Year:   y,
 		Month:  int(m),
 		Day:    d,
@@ -36,21 +58,17 @@ func (s *Service) PressButton(ctx context.Context, user domain.User) (domain.But
 
 	err := s.repo.GetButton(ctx, &b)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return domain.Button{}, err
+		return err
 	}
 
 	b.Count++
 
 	err = s.repo.SetButton(ctx, b)
 	if err != nil {
-		return domain.Button{}, err
+		return err
 	}
 
-	b.UpdateText()
-
-	metrics.RecordButtonPress(user.Name)
-
-	return b, nil
+	return nil
 }
 
 func (s *Service) Buttons(ctx context.Context, user domain.User) ([]domain.Button, error) {

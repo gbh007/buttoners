@@ -4,12 +4,18 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gbh007/buttoners/core/clients/authclient"
+	"github.com/gbh007/buttoners/core/dto"
+	"github.com/gbh007/buttoners/core/kafka"
+	coreLogger "github.com/gbh007/buttoners/core/logger"
 	"github.com/gbh007/buttoners/services/legacy/internal/repository"
 	"github.com/gbh007/buttoners/services/legacy/internal/service/button"
 	"github.com/gbh007/buttoners/services/legacy/internal/service/user"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 
 	cMetrics "github.com/gbh007/buttoners/core/metrics"
 	"github.com/labstack/echo/v4"
@@ -25,6 +31,9 @@ type Controller struct {
 
 	buttonService *button.Service
 	userSevice    *user.Service
+
+	kafkaTaskConsumer *kafka.Consumer[dto.KafkaTaskData]
+	kafkaLogClient    *kafka.Producer[dto.KafkaLogData]
 }
 
 type Config struct {
@@ -38,9 +47,18 @@ type Config struct {
 
 	JaegerURL      string `envconfig:"JAEGER_URL" default:"http://jaeger:14268/api/traces"`
 	PrometheusAddr string `envconfig:"PROMETHEUS_ADDR" default:"pushgateway:9091"`
+
+	Kafka struct {
+		TaskTopic string `envconfig:"KAFKA_TASK_TOPIC" default:"gate"`
+		LogTopic  string `envconfig:"KAFKA_LOG_TOPIC" default:"log"`
+		GroupID   string `envconfig:"KAFKA_GROUP_ID"`
+		Addr      string `envconfig:"KAFKA_ADDR" default:"kafka:9092"`
+	}
 }
 
 func New(logger *slog.Logger, cfg Config) (*Controller, error) {
+	tracer := otel.GetTracerProvider().Tracer(cMetrics.InstanceName)
+
 	repo, err := repository.New(logger, cfg.DBType, cfg.DBDNS)
 	if err != nil {
 		return nil, err
@@ -56,8 +74,48 @@ func New(logger *slog.Logger, cfg Config) (*Controller, error) {
 		return nil, err
 	}
 
-	buttonService := button.New(repo)
+	queueReaderMetrics, err := cMetrics.NewQueueReaderMetrics(cMetrics.DefaultRegistry, cMetrics.DefaultTimeBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	queueWriterMetrics, err := cMetrics.NewQueueWriterMetrics(cMetrics.DefaultRegistry, cMetrics.DefaultTimeBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	kafkaTaskClient := kafka.NewProducer[dto.KafkaTaskData](logger, cfg.Kafka.Addr, cfg.Kafka.TaskTopic, queueWriterMetrics)
+	kafkaLogClient := kafka.NewProducer[dto.KafkaLogData](logger, cfg.Kafka.Addr, cfg.Kafka.LogTopic, queueWriterMetrics)
+
+	buttonService := button.New(repo, kafkaTaskClient)
 	userSevice := user.New(authClient)
+
+	kafkaTaskConsumer := kafka.NewConsumer(
+		logger,
+		cfg.Kafka.Addr,
+		cfg.Kafka.TaskTopic,
+		cfg.Kafka.GroupID,
+		queueReaderMetrics,
+		func(ctx context.Context, key string, data dto.KafkaTaskData) error {
+			ctx, span := tracer.Start(ctx, "handle button")
+			defer span.End()
+
+			ctx, rabbitCnl := context.WithTimeout(ctx, time.Second*10)
+			defer rabbitCnl()
+
+			err := buttonService.ConsumePressButton(ctx, int(data.UserID))
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "handle error")
+
+				coreLogger.LogWithMeta(logger, ctx, slog.LevelError, "write to rabbitmq", "error", err.Error(), "msg_key", key)
+
+				return err
+			}
+
+			return nil
+		},
+	)
 
 	return &Controller{
 		addr:  cfg.APIAddr,
@@ -65,8 +123,10 @@ func New(logger *slog.Logger, cfg Config) (*Controller, error) {
 
 		logger: logger,
 
-		buttonService: buttonService,
-		userSevice:    userSevice,
+		buttonService:     buttonService,
+		userSevice:        userSevice,
+		kafkaTaskConsumer: kafkaTaskConsumer,
+		kafkaLogClient:    kafkaLogClient,
 	}, nil
 }
 
@@ -75,7 +135,9 @@ func (cnt Controller) Serve(ctx context.Context) error {
 	e.Validator = vldr{validator: validator.New()}
 
 	// FIXME: нужные мидлвари
-	// e.Use()
+	e.Use(
+		cnt.logActivity(),
+	)
 
 	e.POST("/api/v1/user", cnt.createUser)
 	e.DELETE("/api/v1/user", cnt.logout)
@@ -99,7 +161,14 @@ func (cnt Controller) Serve(ctx context.Context) error {
 		}
 	}()
 
+	go cnt.kafkaTaskConsumer.Start(ctx)
+
 	err := e.Start(cnt.addr)
+	if err != nil {
+		return err
+	}
+
+	err = cnt.kafkaTaskConsumer.Close()
 	if err != nil {
 		return err
 	}

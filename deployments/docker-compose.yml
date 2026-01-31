@@ -38,6 +38,7 @@ services:
   #   # ports:
   #   #   - 14281:14281
   #   environment:
+      # KAFKA_GROUP_ID: legacy
   #     SELF_ADDR: :8080
   #     SELF_DEBUG: false
   #     DB_TYPE: "postgres"
