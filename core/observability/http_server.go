@@ -36,9 +36,11 @@ func NewHTTPMiddleware(
 
 func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tStart := time.Now()
+	host := r.URL.Host
+	path := r.URL.Path
 
-	h.metrics.IncActive(r.URL.Host, r.URL.Path, r.Method)
-	defer h.metrics.DecActive(r.URL.Host, r.URL.Path, r.Method)
+	h.metrics.IncActive(host, path, r.Method)
+	defer h.metrics.DecActive(host, path, r.Method)
 
 	var (
 		requestBody             []byte
@@ -48,8 +50,8 @@ func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	requestLog = append(
 		requestLog,
-		slog.String("host", r.URL.Host),
-		slog.String("path", r.URL.Path),
+		slog.String("host", host),
+		slog.String("path", path),
 	)
 
 	if len(r.Header) > 0 {
@@ -65,27 +67,7 @@ func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	if r.GetBody != nil {
-		body, err := r.GetBody()
-		if err != nil {
-			h.logger.ErrorContext(
-				r.Context(), h.serverName+" get request body",
-				slog.String("error", err.Error()),
-			)
-
-			return
-		}
-
-		requestBody, err = io.ReadAll(body)
-		if err != nil {
-			h.logger.ErrorContext(
-				r.Context(), h.serverName+" read request body",
-				slog.String("error", err.Error()),
-			)
-
-			return
-		}
-	} else if r.Body != nil {
+	if r.Body != nil {
 		requestBody, err = io.ReadAll(r.Body)
 		if err != nil {
 			h.logger.ErrorContext(
@@ -107,9 +89,6 @@ func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		r.Body = io.NopCloser(bytes.NewReader(requestBody))
-		r.GetBody = func() (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(requestBody)), nil
-		}
 	}
 
 	if len(requestBody) > 0 {
@@ -127,7 +106,7 @@ func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w = wReplace
 
 	defer func() {
-		h.metrics.AddHandle(r.URL.Host, r.URL.Path, r.Method, wReplace.code, time.Since(tStart))
+		h.metrics.AddHandle(host, path, r.Method, wReplace.code, time.Since(tStart))
 	}()
 
 	h.next.ServeHTTP(w, r)

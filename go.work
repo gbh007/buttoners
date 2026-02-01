@@ -5,6 +5,7 @@ use (
 	./services/auth
 	./services/gate
 	./services/handler
+	./services/legacy
 	./services/log
 	./services/notification
 	./services/worker

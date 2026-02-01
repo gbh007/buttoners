@@ -10,10 +10,12 @@ import (
 	"github.com/gbh007/buttoners/core/dto"
 	"github.com/gbh007/buttoners/core/kafka"
 	coreLogger "github.com/gbh007/buttoners/core/logger"
+	"github.com/gbh007/buttoners/core/observability"
 	"github.com/gbh007/buttoners/services/legacy/internal/repository"
 	"github.com/gbh007/buttoners/services/legacy/internal/service/button"
 	"github.com/gbh007/buttoners/services/legacy/internal/service/user"
 	"github.com/go-playground/validator/v10"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 
@@ -31,6 +33,8 @@ type Controller struct {
 
 	buttonService *button.Service
 	userSevice    *user.Service
+
+	httpServerMetrics *cMetrics.HTTPServerMetrics
 
 	kafkaTaskConsumer *kafka.Consumer[dto.KafkaTaskData]
 	kafkaLogClient    *kafka.Producer[dto.KafkaLogData]
@@ -65,6 +69,11 @@ func New(logger *slog.Logger, cfg Config) (*Controller, error) {
 	}
 
 	httpClientMetrics, err := cMetrics.NewHTTPClientMetrics(cMetrics.DefaultRegistry, cMetrics.DefaultTimeBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	httpServerMetrics, err := cMetrics.NewHTTPServerMetrics(cMetrics.DefaultRegistry, cMetrics.DefaultTimeBuckets)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +130,8 @@ func New(logger *slog.Logger, cfg Config) (*Controller, error) {
 		addr:  cfg.APIAddr,
 		debug: cfg.Debug,
 
-		logger: logger,
+		logger:            logger,
+		httpServerMetrics: httpServerMetrics,
 
 		buttonService:     buttonService,
 		userSevice:        userSevice,
@@ -134,8 +144,13 @@ func (cnt Controller) Serve(ctx context.Context) error {
 	e := echo.New()
 	e.Validator = vldr{validator: validator.New()}
 
-	// FIXME: нужные мидлвари
 	e.Use(
+		otelecho.Middleware(""),
+		observability.NewEchoMiddleware(
+			cnt.logger,
+			cnt.httpServerMetrics,
+			"legacy",
+		),
 		cnt.logActivity(),
 	)
 
@@ -148,7 +163,7 @@ func (cnt Controller) Serve(ctx context.Context) error {
 	e.GET("/api/v1/button/power", cnt.buttonPower)
 
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		c.JSON(http.StatusInternalServerError, errorModel{
+		_ = c.JSON(http.StatusInternalServerError, errorModel{
 			Message: err.Error(),
 		})
 	}
