@@ -21,6 +21,7 @@ import (
 
 	cMetrics "github.com/gbh007/buttoners/core/metrics"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	_ "embed"
 )
@@ -145,6 +146,7 @@ func (cnt Controller) Serve(ctx context.Context) error {
 	e.Validator = vldr{validator: validator.New()}
 
 	e.Use(
+		middleware.CORS(),
 		otelecho.Middleware(""),
 		observability.NewEchoMiddleware(
 			cnt.logger,
@@ -163,6 +165,10 @@ func (cnt Controller) Serve(ctx context.Context) error {
 	e.GET("/api/v1/button/power", cnt.buttonPower)
 
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		if c.Response().Committed {
+			return
+		}
+
 		_ = c.JSON(http.StatusInternalServerError, errorModel{
 			Message: err.Error(),
 		})

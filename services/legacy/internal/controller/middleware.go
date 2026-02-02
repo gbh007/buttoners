@@ -28,7 +28,7 @@ func (cnt *Controller) logActivity() echo.MiddlewareFunc {
 				Addr:         c.Request().RemoteAddr,
 				UserID:       int64(user.ID),
 				SessionToken: user.Token,
-				Action:       c.Path(),
+				Action:       c.Request().Method + " " + c.Path(),
 				RequestTime:  t,
 				RealIP:       c.RealIP(),
 				ForwardedFor: c.Request().Header.Values("X-Forwarded-For"),

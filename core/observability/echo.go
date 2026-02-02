@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log/slog"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -96,6 +97,14 @@ func NewEchoMiddleware(
 			}()
 
 			handleErr := next(c)
+
+			if wReplace.code == 0 && handleErr != nil {
+				wReplace.code = http.StatusInternalServerError
+				responseLog = append(
+					responseLog,
+					slog.String("error", handleErr.Error()),
+				)
+			}
 
 			responseLog = append(
 				responseLog,

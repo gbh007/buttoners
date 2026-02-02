@@ -28,27 +28,28 @@ services:
       - pushgateway
       - jaeger
 
-  # legacy:
-  #   build:
-  #     context: ..
-  #     dockerfile: ./deployments/Dockerfile
-  #     args:
-  #       BINARY_PATH: ./bin/build/legacy
-  #   restart: none
-  #   # ports:
-  #   #   - 14281:14281
-  #   environment:
-      # KAFKA_GROUP_ID: legacy
-  #     SELF_ADDR: :8080
-  #     SELF_DEBUG: false
-  #     DB_TYPE: "postgres"
-  #     DB_DNS: "postgres://legacy_user:legacy_pwd@postgres:5432/legacy_db?sslmode=disable"
-  #     AUTH_SERVICE_ADDR: http://auth:8080
-  #     AUTH_SERVICE_TOKEN: auth-service-secret
-  #   depends_on:
-  #     - auth
-  #     - pushgateway
-  #     - jaeger
+  legacy:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+      args:
+        BINARY_PATH: ./bin/build/legacy
+    restart: none
+    ports:
+      - 8080:8080
+    environment:
+      KAFKA_GROUP_ID: legacy
+      SELF_ADDR: :8080
+      SELF_DEBUG: false
+      DB_TYPE: "postgres"
+      DB_DNS: "postgres://legacy_user:legacy_pwd@postgres:5432/legacy_db?sslmode=disable"
+      AUTH_SERVICE_ADDR: http://auth:8080
+      AUTH_SERVICE_TOKEN: auth-service-secret
+    depends_on:
+      - auth
+      - pushgateway
+      - jaeger
+      - postgres
 
   auth:
     build:
@@ -328,6 +329,17 @@ services:
         max-size: 1m
         max-file: 2
 
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./postgres-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 15432:5432
+
 volumes:
   mariadb:
   kafka-secrets:
@@ -343,3 +355,4 @@ volumes:
   grafana-data:
   victorialogs-data:
   vector-data:
+  postgres:

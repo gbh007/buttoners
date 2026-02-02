@@ -24,6 +24,7 @@ build:
 	$(BUILD_ENV) go build -o ./bin/build/worker ./services/worker/cmd/worker
 	$(BUILD_ENV) go build -o ./bin/build/log ./services/log/cmd/log
 	$(BUILD_ENV) go build -o ./bin/build/notification ./services/notification/cmd/notification
+	$(BUILD_ENV) go build -o ./bin/build/legacy ./services/legacy/cmd/legacy
 	$(BUILD_ENV) go build -o ./bin/build/console-ui ./ui/console/cmd
 
 .PHONY: up
