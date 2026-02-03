@@ -54,12 +54,12 @@ func (cnt Controller) buttonPower(c echo.Context) error {
 
 	var req buttonPowerRequest
 
-	err := c.Bind(req)
+	err := c.Bind(&req)
 	if err != nil {
 		return err
 	}
 
-	err = c.Validate(req)
+	err = c.Validate(&req)
 	if err != nil {
 		return err
 	}

@@ -14,13 +14,19 @@ var (
 	// Неверный логин/пароль
 	ErrLoginOrPasswordIncorrect = errors.New("login or password incorrect")
 	// Сессия не найдена
-	ErrSessionNotFound = errors.New("session not found")
+	ErrSessionNotFound   = errors.New("session not found")
+	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
 // createUser - создает нового пользователя
 func (s *Server) createUser(ctx context.Context, login, password string) (int64, error) {
 	salt := randomSHA256String()
 	login = strings.ToLower(login)
+
+	existsUser, _ := s.db.GetUserByLogin(ctx, login)
+	if existsUser != nil {
+		return 0, ErrUserAlreadyExists
+	}
 
 	id, err := s.db.CreateUser(ctx, &storage.User{
 		Login:    login,

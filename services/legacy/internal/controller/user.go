@@ -12,12 +12,12 @@ func (cnt Controller) createUser(c echo.Context) error {
 
 	var req loginRequest
 
-	err := c.Bind(req)
+	err := c.Bind(&req)
 	if err != nil {
 		return err
 	}
 
-	err = c.Validate(req)
+	err = c.Validate(&req)
 	if err != nil {
 		return err
 	}

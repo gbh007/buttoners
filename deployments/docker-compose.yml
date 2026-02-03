@@ -36,7 +36,7 @@ services:
         BINARY_PATH: ./bin/build/legacy
     restart: none
     ports:
-      - 8080:8080
+      - 8081:8080
     environment:
       KAFKA_GROUP_ID: legacy
       SELF_ADDR: :8080
@@ -339,6 +339,25 @@ services:
       - ./postgres-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 15432:5432
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  nginx:
+    image: nginx:1.27
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../services/legacy/static:/services/legacy/static:ro
+    ports:
+      - 8080:80
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
 
 volumes:
   mariadb:

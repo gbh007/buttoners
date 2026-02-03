@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -37,6 +38,17 @@ func (s *Server) Register(w http.ResponseWriter, r *http.Request) {
 	pass := req.Password
 
 	_, err = s.createUser(ctx, login, pass)
+	if errors.Is(err, ErrUserAlreadyExists) {
+		w.Header().Set("Content-Type", authclient.ContentType)
+		w.WriteHeader(http.StatusConflict)
+		marshal(w, authclient.ErrorResponse{
+			Code:    "logic",
+			Details: err.Error(),
+		})
+
+		return
+	}
+
 	if err != nil {
 		w.Header().Set("Content-Type", authclient.ContentType)
 		w.WriteHeader(http.StatusInternalServerError)

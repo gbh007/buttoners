@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -23,11 +23,16 @@
             user: {},
             buttons: [],
             unauthorized: true,
+            login: "",
+            password: "",
           });
 
           async function createUser() {
             axios
-              .post("/api/user")
+              .post("/api/v1/user", {
+                login: appState.login,
+                password: appState.password,
+              })
               .then(function (response) {
                 getUser();
               })
@@ -38,7 +43,7 @@
 
           async function getUser() {
             axios
-              .get("/api/user")
+              .get("/api/v1/user")
               .then(function (response) {
                 const data = response.data;
                 appState.user = data;
@@ -57,7 +62,7 @@
 
           async function pressButton() {
             axios
-              .post("/api/button")
+              .post("/api/v1/button")
               .then(function (response) {
                 console.log(response.data);
                 getButtons();
@@ -69,7 +74,7 @@
 
           async function getButtons() {
             axios
-              .get("/api/button")
+              .get("/api/v1/button")
               .then(function (response) {
                 const data = response.data;
                 appState.buttons = data;
@@ -110,12 +115,18 @@
       "
     >
       <b>Кто ты такой?</b>
+      <input type="text" placeholder="login" v-model="appState.login" />
+      <input
+        type="password"
+        placeholder="password"
+        v-model="appState.password"
+      />
       <button @click="createUser" style="padding: 5px">
         Любитель нажимать на кнопку ❤️
       </button>
     </div>
     <div v-else style="display: flex; flex-direction: column; gap: 20px">
-      <i style="text-align: center">Привет {{appState.user.name}}</i>
+      <i style="text-align: center">Привет {{appState.user.login}}</i>
       <button @click="pressButton" style="font-size: xxx-large; padding: 5px">
         🥖 Нажми меня
       </button>
