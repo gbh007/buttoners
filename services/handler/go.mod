@@ -1,6 +1,6 @@
 module github.com/gbh007/buttoners/services/handler
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/gbh007/buttoners/core v0.0.0-20250703045958-6c9e71e00a05
@@ -28,7 +28,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )

@@ -3,12 +3,10 @@ WD = $(shell pwd)
 SERVICE_LIST = $(shell ls -d services/*/)
 GO_APP_LIST = $(SERVICE_LIST) core/ ui/console
 
-.PHONY: gen-proto
-gen-proto:
-	protoc -I=. --go_out=. --go-grpc_out=. services/gate/gate.proto
-
 .PHONY: generate
-generate: gen-proto
+generate:
+	protoc -I=. --go_out=. --go-grpc_out=. services/gate/gate.proto
+	go tool gorm gen -i services/legacy/internal/domain -o services/legacy/internal/repository/gen
 
 .PHONY: install-proto
 install-proto:

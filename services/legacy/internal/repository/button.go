@@ -1,8 +1,11 @@
 package repository
 
 import (
-	"github.com/gbh007/buttoners/services/legacy/internal/domain"
 	"context"
+
+	"github.com/gbh007/buttoners/services/legacy/internal/domain"
+	"github.com/gbh007/buttoners/services/legacy/internal/repository/gen"
+	"gorm.io/gorm"
 )
 
 func (repo Repository) SetButton(ctx context.Context, b domain.Button) error {
@@ -15,7 +18,7 @@ func (repo Repository) SetButton(ctx context.Context, b domain.Button) error {
 }
 
 func (repo Repository) GetButton(ctx context.Context, b *domain.Button) error {
-	res := repo.db.Model(b).Take(b)
+	res := repo.db.Where(b).First(b)
 	if res.Error != nil {
 		return res.Error
 	}
@@ -24,11 +27,11 @@ func (repo Repository) GetButton(ctx context.Context, b *domain.Button) error {
 }
 
 func (repo Repository) ButtonsByUser(ctx context.Context, userID int) ([]domain.Button, error) {
-	buttons := make([]domain.Button, 0)
-
-	res := repo.db.Model(&domain.Button{}).Where("user_id = ?", userID).Find(&buttons)
-	if res.Error != nil {
-		return nil, res.Error
+	buttons, err := gorm.G[domain.Button](repo.db).
+		Where(gen.Button.UserID.Eq(userID)).
+		Find(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return buttons, nil
@@ -37,9 +40,12 @@ func (repo Repository) ButtonsByUser(ctx context.Context, userID int) ([]domain.
 func (repo Repository) ButtonsTotalByUser(ctx context.Context, userID int) (int, error) {
 	var c int
 
-	res := repo.db.Model(&domain.Button{}).Where("user_id = ?", userID).Select("sum(count)").Scan(&c)
-	if res.Error != nil {
-		return 0, res.Error
+	err := gorm.G[domain.Button](repo.db).
+		Where(gen.Button.UserID.Eq(userID)).
+		Select("SUM("+gen.Button.Count.Column().Name+")").
+		Scan(ctx, &c)
+	if err != nil {
+		return 0, err
 	}
 
 	return c, nil
