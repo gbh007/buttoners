@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/gbh007/buttoners/services/worker/internal/storage/migration"
 	"github.com/golang-migrate/migrate/v4"
 	cii "github.com/golang-migrate/migrate/v4/database/clickhouse"
@@ -29,27 +28,33 @@ func Init(ctx context.Context, username, password, dbHostWithPort, databaseName 
 		return nil, fmt.Errorf("%w: %w", errDatabase, err)
 	}
 
-	conn := clickhouse.OpenDB(&clickhouse.Options{
-		Protocol: clickhouse.HTTP,
-		Addr:     []string{dbHostWithPort},
-		Auth: clickhouse.Auth{
-			Database: databaseName,
-			Username: username,
-			Password: password,
-		},
-	})
+	// FIXME: разобратся в чем проблема
+	// conn := clickhouse.OpenDB(&clickhouse.Options{
+	// 	Protocol: clickhouse.HTTP,
+	// 	Addr:     []string{dbHostWithPort},
+	// 	Auth: clickhouse.Auth{
+	// 		Database: databaseName,
+	// 		Username: username,
+	// 		Password: password,
+	// 	},
+	// })
 
-	err = conn.Ping()
-	if err != nil {
-		return nil, fmt.Errorf("%w: ping: %w", errDatabase, err)
-	}
+	// err = conn.Ping()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("%w: ping: %w", errDatabase, err)
+	// }
 
 	sourceInstance, err := iofs.New(migration.Migrations, ".")
 	if err != nil {
 		return nil, fmt.Errorf("%w: open source: %w", errDatabase, err)
 	}
 
-	dbInstance, err := cii.WithInstance(conn, &cii.Config{
+	// dbInstance, err := cii.WithInstance(conn, &cii.Config{
+	// 	DatabaseName:          databaseName,
+	// 	MigrationsTable:       "my_migrations",
+	// 	MigrationsTableEngine: "MergeTree",
+	// })
+	dbInstance, err := cii.WithInstance(db.DB, &cii.Config{
 		DatabaseName:          databaseName,
 		MigrationsTable:       "my_migrations",
 		MigrationsTableEngine: "MergeTree",

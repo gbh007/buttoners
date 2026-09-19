@@ -16,3 +16,4 @@
 - [Grafana](http://grafana.localhost)
 - [Legacy](http://legacy.localhost)
 - [Traefik](http://traefik.localhost)
+- [Данные в БД](http://db.localhost)
