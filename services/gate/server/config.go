@@ -14,6 +14,6 @@ type Config struct {
 	LogService          config.Service
 	NotificationService config.Service
 	RedisAddress        string
-	PrometheusAddress   string
+	MetricAddr          string
 	Kafka               KafkaConfig
 }

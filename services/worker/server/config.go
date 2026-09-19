@@ -13,7 +13,7 @@ type RabbitMQConfig struct {
 type Config struct {
 	ServiceName         string
 	NotificationService config.Service
-	PrometheusAddress   string
+	MetricAddr          string
 	DB                  DBConfig
 	RabbitMQ            RabbitMQConfig
 	RunnerCount         int

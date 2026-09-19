@@ -16,11 +16,11 @@ import (
 )
 
 type Config struct {
-	Self           config.Service
-	DB             config.Database
-	RedisAddr      string `envconfig:"default=redis:6379"`
-	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
-	Jaeger         config.Jaeger
+	Self       config.Service
+	DB         config.Database
+	RedisAddr  string `envconfig:"default=redis:6379"`
+	MetricAddr string `envconfig:"default=:8082"`
+	OTELTraces config.OTELTraces
 }
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, serviceName)
+	_, _, err = tracer.InitTracer(ctx, cfg.OTELTraces.URL, serviceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
@@ -60,10 +60,10 @@ func main() {
 	err = controller.Init(
 		ctx,
 		server.CommunicationConfig{
-			SelfAddress:       cfg.Self.Addr,
-			SelfToken:         cfg.Self.Token,
-			RedisAddress:      cfg.RedisAddr,
-			PrometheusAddress: cfg.PrometheusAddr,
+			SelfAddress:  cfg.Self.Addr,
+			SelfToken:    cfg.Self.Token,
+			RedisAddress: cfg.RedisAddr,
+			MetricAddr:   cfg.MetricAddr,
 		},
 		server.DBConfig{
 			Username:     cfg.DB.User,

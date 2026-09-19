@@ -1,5 +1,9 @@
 name: buttoners
 
+include:
+  - full-infra.docker-compose.yml
+  - observability.docker-compose.yml
+
 services:
   gate:
     build:
@@ -19,14 +23,17 @@ services:
       NOTIFICATION_SERVICE_TOKEN: notification-service-secret
       LOG_SERVICE_ADDR: http://log:8080
       LOG_SERVICE_TOKEN: log-service-secret
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - auth
       - kafka
       - notification
       - log
       - redis
-      - pushgateway
-      - jaeger
+      - victoriatraces
 
   legacy:
     build:
@@ -45,11 +52,14 @@ services:
       DB_DNS: "postgres://legacy_user:legacy_pwd@postgres:5432/legacy_db?sslmode=disable"
       AUTH_SERVICE_ADDR: http://auth:8080
       AUTH_SERVICE_TOKEN: auth-service-secret
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - auth
-      - pushgateway
-      - jaeger
       - postgres
+      - victoriatraces
 
   auth:
     build:
@@ -65,11 +75,14 @@ services:
       DB_PASS: auth_pwd
       DB_ADDR: mariadb:3306
       DB_NAME: auth_db
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - mariadb
       - redis
-      - pushgateway
-      - jaeger
+      - victoriatraces
 
   handler:
     build:
@@ -85,11 +98,14 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - kafka
       - rabbitmq
-      - pushgateway
-      - jaeger
+      - victoriatraces
 
   log:
     build:
@@ -109,11 +125,14 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - kafka
       - clickhouse
-      - pushgateway
-      - jaeger
+      - victoriatraces
 
   worker:
     build:
@@ -134,12 +153,15 @@ services:
     deploy:
       mode: replicated
       replicas: 2
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - rabbitmq
       - notification
       - clickhouse
-      - pushgateway
-      - jaeger
+      - victoriatraces
 
   notification:
     build:
@@ -158,192 +180,13 @@ services:
     deploy:
       mode: replicated
       replicas: 2
+    labels:
+      - prometheus.io/scrape=true
+      - prometheus.io/port=8082
+      - prometheus.io/path=/metrics
     depends_on:
       - mariadb
-      - pushgateway
-      - jaeger
-
-  mariadb:
-    image: mariadb:11
-    restart: none
-    command: "--init-file /init.sql"
-    environment:
-      MARIADB_ROOT_PASSWORD: 12345
-    volumes:
-      - mariadb:/var/lib/mysql
-      - ./maria-db-dev-init.sql:/init.sql
-    ports:
-      - 13306:3306
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    restart: none
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - zookeeper-secrets:/etc/zookeeper/secrets
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-log:/var/lib/zookeeper/log
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    restart: none
-    depends_on:
-      - zookeeper
-    volumes:
-      - kafka-secrets:/etc/kafka/secrets
-      - kafka-data:/var/lib/kafka/data
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  init-kafka:
-    image: confluentinc/cp-kafka:latest
-    restart: none
-    init: true
-    depends_on:
-      - kafka
-    command: ["/bin/sh", "-c", "/kafka.sh"]
-    volumes:
-      - ./inits/kafka.sh:/kafka.sh
-
-  clickhouse:
-    image: clickhouse/clickhouse-server:22.2
-    restart: none
-    environment:
-      CLICKHOUSE_USER: admin
-      CLICKHOUSE_PASSWORD: 123
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_UID: 0
-      CLICKHOUSE_GID: 0
-    volumes:
-      - clickhouse-log:/var/log/clickhouse-server
-      - clickhouse-data:/var/lib/clickhouse
-      - ./clickhouse-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - 18123:8123
-
-  rabbitmq:
-    image: rabbitmq:3.12
-    restart: none
-    environment:
-      RABBITMQ_DEFAULT_USER: task
-      RABBITMQ_DEFAULT_PASS: task_pwd
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-
-  redis:
-    image: redis:7.2
-    restart: none
-    volumes:
-      - redis-data:/data
-
-  pushgateway:
-    image: prom/pushgateway:v1.6.0
-    restart: none
-
-  jaeger:
-    image: jaegertracing/all-in-one
-    restart: none
-    ports:
-      - 16686:16686
-
-  victoriametrics:
-    image: victoriametrics/victoria-metrics:v1.110.0
-    restart: always
-    command:
-      - "-retentionPeriod=7d"
-      - "-promscrape.config=/etc/prometheus/prometheus.yml"
-    volumes:
-      - victoriametrics-data:/victoria-metrics-data
-      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - 8428:8428
-    logging:
-      driver: json-file
-      options:
-        max-size: 1m
-        max-file: 2
-
-  grafana:
-    image: grafana/grafana-oss:11.5.0
-    restart: always
-    user: 0:0
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./provisioning:/etc/grafana/provisioning
-      - ./dashboards:/var/lib/grafana/dashboards
-    environment:
-      GF_INSTALL_PLUGINS: victoriametrics-logs-datasource
-      GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_SERVER_ROOT_URL: http://localhost:3000
-    ports:
-      - 3000:3000
-    depends_on:
-      - victoriametrics
-      - victorialogs
-    logging:
-      driver: json-file
-      options:
-        max-size: 1m
-        max-file: 2
-
-  victorialogs:
-    image: docker.io/victoriametrics/victoria-logs:v1.10.1-victorialogs
-    restart: always
-    command:
-      - "-retentionPeriod=1d"
-      - "-retention.maxDiskSpaceUsageBytes=100MiB"
-      - "-insert.maxLineSizeBytes=1MiB"
-    ports:
-      - 9428:9428
-    volumes:
-      - victorialogs-data:/victoria-logs-data
-    logging:
-      driver: json-file
-      options:
-        max-size: 1m
-        max-file: 2
-
-  vector:
-    image: docker.io/timberio/vector:0.42.X-distroless-libc
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker:/var/lib/docker
-      - ./configs/vector.yml:/etc/vector/vector.yaml:ro
-      - vector-data:/var/lib/vector
-    user: root
-    depends_on:
-      - victorialogs
-    logging:
-      driver: json-file
-      options:
-        max-size: 1m
-        max-file: 2
-
-  postgres:
-    image: postgres:16
-    restart: always
-    environment:
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres:/var/lib/postgresql/data
-      - ./postgres-db-dev-init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - 15432:5432
-    logging:
-      driver: json-file
-      options:
-        max-size: 1m
-        max-file: 2
+      - victoriatraces
 
   nginx:
     image: nginx:1.27
@@ -351,27 +194,36 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ../services/legacy/static:/services/legacy/static:ro
-    ports:
-      - 8080:80
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.legacy.rule=Host(`legacy.localhost`)
+      - traefik.http.services.legacy.loadbalancer.server.url=http://nginx:80
     logging:
       driver: json-file
       options:
         max-size: 1m
         max-file: 2
+    depends_on:
+      - legacy
 
-volumes:
-  mariadb:
-  kafka-secrets:
-  kafka-data:
-  zookeeper-secrets:
-  zookeeper-data:
-  zookeeper-log:
-  clickhouse-data:
-  clickhouse-log:
-  rabbitmq-data:
-  redis-data:
-  victoriametrics-data:
-  grafana-data:
-  victorialogs-data:
-  vector-data:
-  postgres:
+  traefik:
+    image: traefik:v3.7
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.forwardedHeaders.trustedIPs=172.0.0.0/8,192.168.0.0/16
+      - --providers.docker.exposedbydefault=false
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 80:80
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`traefik.localhost`)
+      - traefik.http.services.traefik.loadbalancer.server.url=http://traefik:8080
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2

@@ -22,8 +22,8 @@ type Config struct {
 	NotificationService config.Service
 	LogService          config.Service
 	RedisAddr           string `envconfig:"default=redis:6379"`
-	PrometheusAddr      string `envconfig:"default=pushgateway:9091"`
-	Jaeger              config.Jaeger
+	MetricAddr          string `envconfig:"default=:8082"`
+	OTELTraces          config.OTELTraces
 }
 
 func main() {
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, metrics.InstanceName)
+	_, _, err = tracer.InitTracer(ctx, cfg.OTELTraces.URL, metrics.InstanceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
@@ -64,7 +64,7 @@ func main() {
 		LogService:          cfg.LogService,
 		NotificationService: cfg.NotificationService,
 		RedisAddress:        cfg.RedisAddr,
-		PrometheusAddress:   cfg.PrometheusAddr,
+		MetricAddr:          cfg.MetricAddr,
 		Kafka: server.KafkaConfig{
 			Addr:      cfg.Kafka.Addr,
 			TaskTopic: cfg.Kafka.TaskTopic,

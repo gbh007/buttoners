@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) Run(ctx context.Context) error {
-	go metrics.Run(s.logger, metrics.Config{Addr: s.cfg.PrometheusAddress})
+	go metrics.Run(ctx, s.logger, metrics.Config{Addr: s.cfg.MetricAddr})
 
 	defer s.Close(ctx)
 

@@ -33,13 +33,13 @@ func main() {
 	l := logger.New(serviceName, "debug") // FIXME: level
 	metrics.InstanceName = serviceName
 
-	_, _, err := tracer.InitTracer(cfg.JaegerURL, metrics.InstanceName)
+	_, _, err := tracer.InitTracer(ctx, cfg.OTELTracesURL, metrics.InstanceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
 	}
 
-	go metrics.Run(l, metrics.Config{Addr: cfg.PrometheusAddr})
+	go metrics.Run(ctx, l, metrics.Config{Addr: cfg.MetricAddr})
 
 	c, err := controller.New(l, cfg)
 	if err != nil {

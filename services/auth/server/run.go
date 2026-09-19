@@ -18,14 +18,14 @@ type DBConfig struct {
 }
 
 type CommunicationConfig struct {
-	SelfAddress       string
-	SelfToken         string
-	RedisAddress      string
-	PrometheusAddress string
+	SelfAddress  string
+	SelfToken    string
+	RedisAddress string
+	MetricAddr   string
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	go metrics.Run(s.logger, metrics.Config{Addr: s.comCfg.PrometheusAddress})
+	go metrics.Run(ctx, s.logger, metrics.Config{Addr: s.comCfg.MetricAddr})
 
 	defer s.Close(ctx)
 

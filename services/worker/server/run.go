@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) Run(ctx context.Context) error {
-	go metrics.Run(s.logger, metrics.Config{Addr: s.cfg.PrometheusAddress})
+	go metrics.Run(ctx, s.logger, metrics.Config{Addr: s.cfg.MetricAddr})
 
 	runnerCtx, runnerCnl := context.WithCancel(context.TODO())
 	runnerWg := new(sync.WaitGroup)

@@ -16,10 +16,10 @@ import (
 )
 
 type Config struct {
-	RabbitMQ       config.RabbitMQ
-	Kafka          config.Kafka
-	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
-	Jaeger         config.Jaeger
+	RabbitMQ   config.RabbitMQ
+	Kafka      config.Kafka
+	MetricAddr string `envconfig:"default=:8082"`
+	OTELTraces config.OTELTraces
 }
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, metrics.InstanceName)
+	_, _, err = tracer.InitTracer(ctx, cfg.OTELTraces.URL, metrics.InstanceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
@@ -55,8 +55,8 @@ func main() {
 	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
 	srvConf := server.Config{
-		ServiceName:       metrics.InstanceName,
-		PrometheusAddress: cfg.PrometheusAddr,
+		ServiceName: metrics.InstanceName,
+		MetricAddr:  cfg.MetricAddr,
 		Kafka: server.KafkaConfig{
 			Addr:    cfg.Kafka.Addr,
 			Topic:   cfg.Kafka.TaskTopic,

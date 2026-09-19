@@ -32,8 +32,8 @@ type RabbitMQ struct {
 	Queue string `envconfig:"default=task"`
 }
 
-type Jaeger struct {
-	URL string `envconfig:"default=http://jaeger:14268/api/traces"`
+type OTELTraces struct {
+	URL string `envconfig:"default=http://victoriatraces:10428/insert/opentelemetry/v1/traces"`
 }
 
 type Service struct {

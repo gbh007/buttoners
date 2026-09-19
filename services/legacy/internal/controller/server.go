@@ -50,8 +50,8 @@ type Config struct {
 	AuthAddr  string `envconfig:"AUTH_SERVICE_ADDR"`
 	AuthToken string `envconfig:"AUTH_SERVICE_TOKEN"`
 
-	JaegerURL      string `envconfig:"JAEGER_URL" default:"http://jaeger:14268/api/traces"`
-	PrometheusAddr string `envconfig:"PROMETHEUS_ADDR" default:"pushgateway:9091"`
+	OTELTracesURL string `envconfig:"JAEGER_URL" default:"http://victoriatraces:10428/insert/opentelemetry/v1/traces"`
+	MetricAddr    string `envconfig:"METRIC_ADDR" default:":8082"`
 
 	Kafka struct {
 		TaskTopic string `envconfig:"KAFKA_TASK_TOPIC" default:"gate"`

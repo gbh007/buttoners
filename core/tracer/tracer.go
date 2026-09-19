@@ -1,10 +1,11 @@
 package tracer
 
 import (
+	"context"
 	"fmt"
 
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger" //nolint:staticcheck // будет заменен позднее
+	"go.opentelemetry.io/otel" //nolint:staticcheck // будет заменен позднее
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -12,8 +13,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func InitTracer(jaegerURL string, serviceName string) (trace.Tracer, *tracesdk.TracerProvider, error) {
-	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerURL)))
+func InitTracer(ctx context.Context, otelURL string, serviceName string) (trace.Tracer, *tracesdk.TracerProvider, error) {
+	exporter, err := otlptracehttp.New(
+		ctx,
+		otlptracehttp.WithEndpointURL(otelURL),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("initialize exporter: %w", err)
 	}
@@ -34,7 +38,8 @@ func newTraceProvider(exp tracesdk.SpanExporter, serviceName string) (*tracesdk.
 		resource.Default(),
 		resource.NewSchemaless(
 			semconv.ServiceName(serviceName),
-		))
+		),
+	)
 	if err != nil {
 		return nil, err
 	}

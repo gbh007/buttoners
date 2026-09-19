@@ -11,3 +11,8 @@ datasources:
     access: proxy
     url: http://victorialogs:9428
     isDefault: false
+  - name: VictoriaTracesTempo
+    type: tempo
+    access: proxy
+    url: http://victoriatraces:10428/select/tempo
+    isDefault: false

@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Server) Run(ctx context.Context) error {
-	go metrics.Run(s.l, metrics.Config{Addr: s.cfg.PrometheusAddress})
+	go metrics.Run(ctx, s.l, metrics.Config{Addr: s.cfg.MetricAddr})
 
 	fb := fiber.New(fiber.Config{DisableStartupMessage: true})
 	otelHandler := otelfiber.Middleware(

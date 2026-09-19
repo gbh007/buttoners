@@ -13,14 +13,14 @@ type DBConfig struct {
 }
 
 type Config struct {
-	SelfAddress       string
-	SelfToken         string
-	PrometheusAddress string
-	DB                DBConfig
+	SelfAddress string
+	SelfToken   string
+	MetricAddr  string
+	DB          DBConfig
 }
 
 func (s *Server) Run(ctx context.Context) error {
-	go metrics.Run(s.logger, metrics.Config{Addr: s.cfg.PrometheusAddress})
+	go metrics.Run(ctx, s.logger, metrics.Config{Addr: s.cfg.MetricAddr})
 
 	// FIXME: добавить авторизацию
 	server := &fasthttp.Server{

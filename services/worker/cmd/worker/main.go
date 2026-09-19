@@ -19,9 +19,9 @@ type Config struct {
 	RabbitMQ            config.RabbitMQ
 	DB                  config.Database
 	NotificationService config.Service
-	PrometheusAddr      string `envconfig:"default=pushgateway:9091"`
+	MetricAddr          string `envconfig:"default=:8082"`
 	RunnerCount         int    `envconfig:"default=20"`
-	Jaeger              config.Jaeger
+	OTELTraces          config.OTELTraces
 }
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, metrics.InstanceName)
+	_, _, err = tracer.InitTracer(ctx, cfg.OTELTraces.URL, metrics.InstanceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
@@ -59,7 +59,7 @@ func main() {
 	srvConf := server.Config{
 		ServiceName:         metrics.InstanceName,
 		NotificationService: cfg.NotificationService,
-		PrometheusAddress:   cfg.PrometheusAddr,
+		MetricAddr:          cfg.MetricAddr,
 		DB: server.DBConfig{
 			Username:     cfg.DB.User,
 			Password:     cfg.DB.Pass,

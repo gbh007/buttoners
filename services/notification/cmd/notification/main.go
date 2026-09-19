@@ -16,10 +16,10 @@ import (
 )
 
 type Config struct {
-	Self           config.Service
-	DB             config.Database
-	PrometheusAddr string `envconfig:"default=pushgateway:9091"`
-	Jaeger         config.Jaeger
+	Self       config.Service
+	DB         config.Database
+	MetricAddr string `envconfig:"default=:8082"`
+	OTELTraces config.OTELTraces
 }
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, _, err = tracer.InitTracer(cfg.Jaeger.URL, metrics.InstanceName)
+	_, _, err = tracer.InitTracer(ctx, cfg.OTELTraces.URL, metrics.InstanceName)
 	if err != nil {
 		logger.LogWithMeta(l, ctx, slog.LevelWarn, "fail init tracer", "error", err.Error())
 		os.Exit(1)
@@ -55,9 +55,9 @@ func main() {
 	defer logger.LogWithMeta(l, ctx, slog.LevelInfo, "server stop")
 
 	srvConf := server.Config{
-		SelfAddress:       cfg.Self.Addr,
-		SelfToken:         cfg.Self.Token,
-		PrometheusAddress: cfg.PrometheusAddr,
+		SelfAddress: cfg.Self.Addr,
+		SelfToken:   cfg.Self.Token,
+		MetricAddr:  cfg.MetricAddr,
 		DB: server.DBConfig{
 			Username:     cfg.DB.User,
 			Password:     cfg.DB.Pass,

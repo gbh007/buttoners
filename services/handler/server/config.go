@@ -11,8 +11,8 @@ type RabbitMQConfig struct {
 }
 
 type Config struct {
-	ServiceName       string
-	PrometheusAddress string
-	Kafka             KafkaConfig
-	RabbitMQ          RabbitMQConfig
+	ServiceName string
+	MetricAddr  string
+	Kafka       KafkaConfig
+	RabbitMQ    RabbitMQConfig
 }

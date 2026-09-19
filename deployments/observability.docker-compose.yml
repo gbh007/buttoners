@@ -1,0 +1,111 @@
+services:
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.147.0
+    restart: always
+    command:
+      - -retentionPeriod=1d
+      - -promscrape.config.strictParse=false
+      - -promscrape.config=/etc/prometheus/prometheus.yml
+      - -promscrape.suppressScrapeErrors
+      - -promscrape.suppressDuplicateScrapeTargetErrors
+    volumes:
+      - victoriametrics-data:/victoria-metrics-data
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.metrics.rule=Host(`metrics.localhost`)
+      - traefik.http.services.victoriametrics.loadbalancer.server.url=http://victoriametrics:8428
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  victoriatraces:
+    image: victoriametrics/victoria-traces:v0.11.0
+    restart: always
+    command:
+      - -retentionPeriod=1d
+      - -retention.maxDiskSpaceUsageBytes=100MiB
+    volumes:
+      - victoriatraces-data:/victoria-traces-data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.trace.rule=Host(`trace.localhost`)
+      - traefik.http.services.victoriatraces.loadbalancer.server.url=http://victoriatraces:10428
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.52.0
+    restart: always
+    command:
+      - -retentionPeriod=1d
+      - -retention.maxDiskSpaceUsageBytes=100MiB
+      - -insert.maxLineSizeBytes=1MiB
+    volumes:
+      - victorialogs-data:/victoria-logs-data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.logs.rule=Host(`logs.localhost`)
+      - traefik.http.services.victorialogs.loadbalancer.server.url=http://victorialogs:9428
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  grafana:
+    image: grafana/grafana-oss:13.0.2
+    restart: always
+    user: 0:0
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+      - ./dashboards:/var/lib/grafana/dashboards
+    environment:
+      GF_INSTALL_PLUGINS: victoriametrics-logs-datasource
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SERVER_ROOT_URL: http://grafana.localhost
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=Host(`grafana.localhost`)
+      - traefik.http.services.grafana.loadbalancer.server.url=http://grafana:3000
+    depends_on:
+      - victoriametrics
+      - victorialogs
+      - victoriatraces
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+  vector:
+    image: docker.io/timberio/vector:0.57.X-distroless-libc
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - ./configs/vector.yml:/etc/vector/vector.yaml:ro
+      - vector-data:/var/lib/vector
+    user: root
+    depends_on:
+      - victorialogs
+    logging:
+      driver: json-file
+      options:
+        max-size: 1m
+        max-file: 2
+
+volumes:
+  victoriametrics-data: {}
+  grafana-data: {}
+  victorialogs-data: {}
+  vector-data: {}
+  victoriatraces-data: {}
