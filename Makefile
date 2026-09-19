@@ -59,3 +59,16 @@ tidy:
 		go mod tidy; \
 	done
 	go work sync
+
+
+.PHONY: updatedeps
+updatedeps:
+	go work edit -go=1.27.0
+	for path in $(GO_APP_LIST); do \
+		cd $(WD)/$$path; \
+		echo $$path; \
+		go mod edit -go=1.27.0; \
+		go get -u ./...; \
+		go mod tidy; \
+	done
+	go work sync
