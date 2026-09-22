@@ -17,14 +17,6 @@ var (
 	errInvalidInputData = errors.New("invalid")
 )
 
-func max(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-
-	return b
-}
-
 func (s *Server) someBusinessLogic(ctx context.Context, duration, failChance int64) (int64, string, error) {
 	_, span := s.tracer.Start(ctx, "business-logic")
 	defer span.End()

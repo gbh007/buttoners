@@ -1,0 +1,35 @@
+asyncapi: 3.0.0
+info:
+  title: Kafka gate
+  version: 0.0.1
+  description: Данные задач из запросов пользователя
+channels:
+  gate:
+    address: gate
+    messages:
+      default:
+        contentType: application/json
+        payload:
+          type: object
+          properties:
+            user_id:
+              type: integer
+              format: int64
+              description: ID пользователя
+            chance:
+              type: integer
+              format: int64
+              description: Шанс на провал
+              minimum: 0
+              maximum: 100
+            duration:
+              type: integer
+              format: int64
+              description: Желаемая продолжительность обработки в секундах
+              minimum: 1
+              maximum: 50
+operations:
+  gate:
+    action: receive
+    channel:
+      $ref: "#/channels/gate"

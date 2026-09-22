@@ -1,0 +1,55 @@
+asyncapi: 3.0.0
+info:
+  title: Kafka log
+  version: 0.0.1
+  description: Данные действий пользователя
+channels:
+  log:
+    address: log
+    messages:
+      default:
+        contentType: application/json
+        payload:
+          type: object
+          properties:
+            addr:
+              type: string
+              description: Адрес пользователя
+            user_id:
+              type: integer
+              format: int64
+              description: ID пользователя
+            session_token:
+              type: string
+              description: Токен сессии пользователя (ooops 😈)
+            action:
+              type: string
+              description: Действие пользователя (ендпоинт)
+            chance:
+              type: integer
+              format: int64
+              description: Шанс на провал
+            duration:
+              type: integer
+              format: int64
+              description: Желаемая продолжительность обработки в секундах
+            request_time:
+              type: string
+              format: datetime
+              description: Время начала запроса
+            real_ip:
+              type: string
+              description: Реальный IP пользователя
+            forwarded_for:
+              type: array
+              description: Информация из заголовка X-Forwarded-For
+              items:
+                type: string
+            error:
+              type: string
+              description: Информация об ошибке если была
+operations:
+  log:
+    action: receive
+    channel:
+      $ref: "#/channels/log"
