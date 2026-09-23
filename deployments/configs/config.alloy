@@ -155,6 +155,16 @@ prometheus.scrape "container_metrics" {
 	scrape_timeout  = "1s"
 }
 
+// CONTAINER TRACES
+
+otelcol.receiver.otlp "container_traces" {
+	http { }
+
+	output {
+		traces = [otelcol.exporter.otlphttp.traces.input]
+	}
+}
+
 // WRITERS
 
 loki.write "default" {
@@ -170,5 +180,11 @@ loki.write "default" {
 prometheus.remote_write "default" {
 	endpoint {
 		url = "http://victoriametrics:8428/prometheus/api/v1/write"
+	}
+}
+
+otelcol.exporter.otlphttp "traces" {
+	client {
+		endpoint = "http://victoriatraces:10428/insert/opentelemetry"
 	}
 }

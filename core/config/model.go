@@ -33,7 +33,7 @@ type RabbitMQ struct {
 }
 
 type OTELTraces struct {
-	URL string `envconfig:"default=http://victoriatraces:10428/insert/opentelemetry/v1/traces"`
+	URL string `envconfig:"default=http://alloy:4318/v1/traces"`
 }
 
 type Service struct {

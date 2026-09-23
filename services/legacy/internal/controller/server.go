@@ -50,7 +50,7 @@ type Config struct {
 	AuthAddr  string `envconfig:"AUTH_SERVICE_ADDR"`
 	AuthToken string `envconfig:"AUTH_SERVICE_TOKEN"`
 
-	OTELTracesURL string `envconfig:"JAEGER_URL" default:"http://victoriatraces:10428/insert/opentelemetry/v1/traces"`
+	OTELTracesURL string `envconfig:"OTEL_URL" default:"http://alloy:4318/v1/traces"`
 	MetricAddr    string `envconfig:"METRIC_ADDR" default:":8082"`
 
 	Kafka struct {
