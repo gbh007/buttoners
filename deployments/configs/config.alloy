@@ -3,23 +3,23 @@ logging {
 	format = "json"
 }
 
-// HOST DOCKER
+// CONTAINER LOGS
 
-discovery.docker "host_docker" {
+discovery.docker "container_logs" {
 	host = "unix:///var/run/docker.sock"
 }
 
-loki.source.docker "host_docker" {
+loki.source.docker "container_logs" {
 	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.docker.host_docker.targets
-	relabel_rules = loki.relabel.host_docker.rules
-	forward_to    = [loki.process.host_docker_parser.receiver]
+	targets       = discovery.docker.container_logs.targets
+	relabel_rules = loki.relabel.container_logs.rules
+	forward_to    = [loki.process.container_logs.receiver]
 	labels        = {
 		job = "dockerlogs",
 	}
 }
 
-loki.relabel "host_docker" {
+loki.relabel "container_logs" {
 	forward_to = []
 
 	rule {
@@ -54,7 +54,7 @@ loki.relabel "host_docker" {
 	}
 }
 
-loki.process "host_docker_parser" {
+loki.process "container_logs" {
 	stage.drop {
 		source              = "container_id"
 		expression          = "^$"
@@ -93,6 +93,66 @@ loki.process "host_docker_parser" {
 	}
 
 	forward_to = [loki.write.default.receiver]
+}
+
+// CONTAINER METRICS
+
+discovery.docker "container_metrics" {
+	host = "unix:///var/run/docker.sock"
+
+	filter {
+		name   = "label"
+		values = ["prometheus.io/scrape=true"]
+	}
+}
+
+discovery.relabel "container_metrics" {
+	targets = discovery.docker.container_metrics.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_prometheus_io_scrape"]
+		regex         = "true"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = "buttoners"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.+)"
+		action        = "replace"
+		target_label  = "pod"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_prometheus_io_path"]
+		regex         = "(.+)"
+		action        = "replace"
+		target_label  = "__metrics_path__"
+	}
+
+	rule {
+		source_labels = ["__address__", "__meta_docker_container_label_prometheus_io_port"]
+		regex         = "([^:]+)(?::\\d+)?;(\\d+)"
+		replacement   = "${1}:${2}"
+		target_label  = "__address__"
+	}
+}
+
+prometheus.scrape "container_metrics" {
+	targets         = discovery.relabel.container_metrics.output
+	forward_to      = [prometheus.remote_write.default.receiver]
+	scrape_interval = "5s"
+	scrape_timeout  = "1s"
 }
 
 // WRITERS

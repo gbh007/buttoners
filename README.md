@@ -12,7 +12,7 @@
 
 - [Метрики](http://metrics.localhost)
 - [Логи](http://logs.localhost)
-- [Трейсы](http://trace.localhost)
+- [Трейсы](http://traces.localhost)
 - [Grafana](http://grafana.localhost)
 - [Legacy](http://legacy.localhost)
 - [Traefik](http://traefik.localhost)

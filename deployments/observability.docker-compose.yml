@@ -4,14 +4,8 @@ services:
     restart: on-failure:10
     command:
       - -retentionPeriod=1d
-      - -promscrape.config.strictParse=false
-      - -promscrape.config=/etc/prometheus/prometheus.yml
-      - -promscrape.suppressScrapeErrors
-      - -promscrape.suppressDuplicateScrapeTargetErrors
     volumes:
       - victoriametrics-data:/victoria-metrics-data
-      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - traefik.enable=true
       - traefik.http.routers.metrics.rule=Host(`metrics.localhost`)
@@ -51,7 +45,7 @@ services:
       - victoriatraces-data:/victoria-traces-data
     labels:
       - traefik.enable=true
-      - traefik.http.routers.trace.rule=Host(`trace.localhost`)
+      - traefik.http.routers.traces.rule=Host(`traces.localhost`)
       - traefik.http.services.victoriatraces.loadbalancer.server.url=http://victoriatraces:10428
     logging:
       driver: json-file
