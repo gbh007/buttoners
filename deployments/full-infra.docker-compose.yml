@@ -1,7 +1,7 @@
 services:
   mariadb:
     image: mariadb:11
-    restart: none
+    restart: on-failure:10
     command: "--init-file /init.sql"
     environment:
       MARIADB_ROOT_PASSWORD: 12345
@@ -11,7 +11,7 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
-    restart: none
+    restart: on-failure:10
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -22,7 +22,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:latest
-    restart: none
+    restart: on-failure:10
     depends_on:
       - zookeeper
     volumes:
@@ -38,7 +38,7 @@ services:
 
   init-kafka:
     image: confluentinc/cp-kafka:latest
-    restart: none
+    restart: on-failure:10
     init: true
     depends_on:
       - kafka
@@ -48,7 +48,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:22.2
-    restart: none
+    restart: on-failure:10
     environment:
       CLICKHOUSE_USER: admin
       CLICKHOUSE_PASSWORD: 123
@@ -63,7 +63,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.12
-    restart: none
+    restart: on-failure:10
     environment:
       RABBITMQ_DEFAULT_USER: task
       RABBITMQ_DEFAULT_PASS: task_pwd
@@ -72,13 +72,13 @@ services:
 
   redis:
     image: redis:7.2
-    restart: none
+    restart: on-failure:10
     volumes:
       - redis-data:/data
 
   postgres:
     image: postgres:16
-    restart: none
+    restart: on-failure:10
     environment:
       - POSTGRES_PASSWORD=postgres
     volumes:
@@ -92,7 +92,7 @@ services:
 
   dbgate:
     image: dbgate/dbgate:7.3.0
-    restart: none
+    restart: on-failure:10
     volumes:
       - dbgate-data:/root/.dbgate
     environment:

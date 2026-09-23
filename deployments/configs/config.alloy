@@ -1,0 +1,114 @@
+logging {
+	level  = "error"
+	format = "json"
+}
+
+// HOST DOCKER
+
+discovery.docker "host_docker" {
+	host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "host_docker" {
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.docker.host_docker.targets
+	relabel_rules = loki.relabel.host_docker.rules
+	forward_to    = [loki.process.host_docker_parser.receiver]
+	labels        = {
+		job = "dockerlogs",
+	}
+}
+
+loki.relabel "host_docker" {
+	forward_to = []
+
+	rule {
+		action      = "labelmap"
+		regex       = "__meta_docker_container_id"
+		replacement = "container_id"
+	}
+
+	rule {
+		action      = "labelmap"
+		regex       = "__meta_docker_container_label_com_docker_compose_service"
+		replacement = "service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "pod"
+		replacement   = "$1"
+	}
+
+	rule {
+		action        = "keep"
+		source_labels = ["__meta_docker_container_label_alloy_logs_scrape"]
+		regex         = "true"
+	}
+
+	rule {
+		action        = "keep"
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = "buttoners"
+	}
+}
+
+loki.process "host_docker_parser" {
+	stage.drop {
+		source              = "container_id"
+		expression          = "^$"
+		drop_counter_reason = "missing_required_docker_label"
+	}
+
+	stage.regex {
+		expression         = "level=(?P<level>\\S+)"
+		labels_from_groups = true
+	}
+
+	stage.regex {
+		expression         = "\"level\"\\s*:\\s*\"(?P<level>[^\"]+)\""
+		labels_from_groups = true
+	}
+
+	stage.regex {
+		expression         = "trace_id=(?P<trace_id>\\S+)"
+		labels_from_groups = true
+	}
+
+	stage.regex {
+		expression         = "\"trace_id\"\\s*:\\s*\"(?P<trace_id>[^\"]+)\""
+		labels_from_groups = true
+	}
+
+	stage.template {
+		source   = "level"
+		template = "{{ ToUpper .Value }}"
+	}
+
+	stage.labels {
+		values = {
+			level = "level",
+		}
+	}
+
+	forward_to = [loki.write.default.receiver]
+}
+
+// WRITERS
+
+loki.write "default" {
+	endpoint {
+		url = "http://victorialogs:9428/insert/loki/api/v1/push?disable_message_parsing=1"
+	}
+	external_labels = {
+		host     = constants.hostname,
+		scrapper = "alloy",
+	}
+}
+
+prometheus.remote_write "default" {
+	endpoint {
+		url = "http://victoriametrics:8428/prometheus/api/v1/write"
+	}
+}

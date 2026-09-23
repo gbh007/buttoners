@@ -17,3 +17,4 @@
 - [Legacy](http://legacy.localhost)
 - [Traefik](http://traefik.localhost)
 - [Данные в БД](http://db.localhost)
+- [Alloy](http://alloy.localhost)

@@ -1,7 +1,7 @@
 services:
   victoriametrics:
     image: victoriametrics/victoria-metrics:v1.147.0
-    restart: always
+    restart: on-failure:10
     command:
       - -retentionPeriod=1d
       - -promscrape.config.strictParse=false
@@ -22,27 +22,9 @@ services:
         max-size: 1m
         max-file: 2
 
-  victoriatraces:
-    image: victoriametrics/victoria-traces:v0.11.0
-    restart: always
-    command:
-      - -retentionPeriod=1d
-      - -retention.maxDiskSpaceUsageBytes=100MiB
-    volumes:
-      - victoriatraces-data:/victoria-traces-data
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.trace.rule=Host(`trace.localhost`)
-      - traefik.http.services.victoriatraces.loadbalancer.server.url=http://victoriatraces:10428
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-
   victorialogs:
     image: victoriametrics/victoria-logs:v1.52.0
-    restart: always
+    restart: on-failure:10
     command:
       - -retentionPeriod=1d
       - -retention.maxDiskSpaceUsageBytes=100MiB
@@ -59,9 +41,27 @@ services:
         max-size: 1m
         max-file: 2
 
+  victoriatraces:
+    image: victoriametrics/victoria-traces:v0.11.0
+    restart: on-failure:10
+    command:
+      - -retentionPeriod=1d
+      - -retention.maxDiskSpaceUsageBytes=100MiB
+    volumes:
+      - victoriatraces-data:/victoria-traces-data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.trace.rule=Host(`trace.localhost`)
+      - traefik.http.services.victoriatraces.loadbalancer.server.url=http://victoriatraces:10428
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
   grafana:
     image: grafana/grafana-oss:13.0.2
-    restart: always
+    restart: on-failure:10
     user: 0:0
     volumes:
       - grafana-data:/var/lib/grafana
@@ -86,26 +86,37 @@ services:
         max-size: 1m
         max-file: 2
 
-  vector:
-    image: docker.io/timberio/vector:0.57.X-distroless-libc
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - ./configs/vector.yml:/etc/vector/vector.yaml:ro
-      - vector-data:/var/lib/vector
-    user: root
+  alloy:
+    image: grafana/alloy:v1.19.2
+    restart: on-failure:10
+    user: 0:0
+    hostname: localhost-buttoners
     depends_on:
+      - victoriametrics
       - victorialogs
+      - victoriatraces
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - alloy-data:/var/lib/alloy/data
+      - ./configs/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.alloy.rule=Host(`alloy.localhost`)
+      - traefik.http.services.alloy.loadbalancer.server.url=http://alloy:12345
     logging:
       driver: json-file
       options:
-        max-size: 1m
+        max-size: 10m
         max-file: 2
 
 volumes:
   victoriametrics-data: {}
-  grafana-data: {}
   victorialogs-data: {}
-  vector-data: {}
   victoriatraces-data: {}
+  alloy-data: {}
+  grafana-data: {}

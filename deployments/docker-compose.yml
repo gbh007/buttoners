@@ -11,7 +11,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/gate
-    restart: none
+    restart: on-failure:10
     ports:
       - 14281:14281
     environment:
@@ -27,6 +27,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - auth
       - kafka
@@ -41,7 +42,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/legacy
-    restart: none
+    restart: on-failure:10
     ports:
       - 8081:8080
     environment:
@@ -56,6 +57,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - auth
       - postgres
@@ -67,7 +69,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/auth
-    restart: none
+    restart: on-failure:10
     environment:
       SELF_ADDR: :8080
       SELF_TOKEN: auth-service-secret
@@ -79,6 +81,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - mariadb
       - redis
@@ -90,7 +93,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/handler
-    restart: none
+    restart: on-failure:10
     environment:
       KAFKA_GROUP_ID: handler
       RABBIT_MQ_USER: task
@@ -102,6 +105,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - kafka
       - rabbitmq
@@ -113,7 +117,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/log
-    restart: none
+    restart: on-failure:10
     environment:
       KAFKA_GROUP_ID: log
       DB_USER: log_user
@@ -129,6 +133,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - kafka
       - clickhouse
@@ -140,7 +145,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/worker
-    restart: none
+    restart: on-failure:10
     environment:
       RABBIT_MQ_USER: task
       RABBIT_MQ_PASS: task_pwd
@@ -157,6 +162,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - rabbitmq
       - notification
@@ -169,7 +175,7 @@ services:
       dockerfile: ./deployments/Dockerfile
       args:
         BINARY_PATH: ./bin/build/notification
-    restart: none
+    restart: on-failure:10
     environment:
       SELF_ADDR: :8080
       SELF_TOKEN: notification-service-secret
@@ -184,6 +190,7 @@ services:
       - prometheus.io/scrape=true
       - prometheus.io/port=8082
       - prometheus.io/path=/metrics
+      - alloy.logs.scrape=true
     depends_on:
       - mariadb
       - victoriatraces

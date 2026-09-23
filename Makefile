@@ -40,7 +40,7 @@ down:
 .PHONY: cleanup
 cleanup:
 	docker compose -f ./deployments/docker-compose.yml down --remove-orphans --volumes
-	rm -r ./bin/build
+	rm -r ./bin/build || true
 
 .PHONY: console-ui
 console-ui: build
