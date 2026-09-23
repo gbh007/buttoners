@@ -1,7 +1,7 @@
 BUILD_ENV = GOOS=linux GOARCH=amd64 CGO_ENABLED=0
 WD = $(shell pwd)
 SERVICE_LIST = $(shell ls -d services/*/)
-GO_APP_LIST = $(SERVICE_LIST) core/ ui/console
+GO_APP_LIST = $(SERVICE_LIST) core/ ui/console tools/gg
 
 .PHONY: generate
 generate:
@@ -72,3 +72,7 @@ updatedeps:
 		go mod tidy; \
 	done
 	go work sync
+
+.PHONY: generate-gg
+generate-gg:
+	go run tools/gg/main.go

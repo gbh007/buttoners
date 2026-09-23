@@ -38,9 +38,7 @@ var (
 
 func init() {
 	DefaultRegistry.MustRegister(
-		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
-			Namespace: MetricsNamespace,
-		}),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		collectors.NewGoCollector(),
 	)
 }

@@ -1,0 +1,5 @@
+to = "deployments/dashboards/gg-main.json"
+
+[grafana]
+# addr = "http://grafana.localhost/api"
+uid = "gg-main"

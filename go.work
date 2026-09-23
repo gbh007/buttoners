@@ -9,5 +9,6 @@ use (
 	./services/log
 	./services/notification
 	./services/worker
+	./tools/gg
 	./ui/console
 )
