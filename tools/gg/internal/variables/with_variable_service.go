@@ -16,7 +16,7 @@ func (g Generator) WithVariableService(builder *dashboard.DashboardBuilder) {
 					g.core.DirtyServiceFilter,
 				)),
 			}).
-			Datasource(g.core.MetricDatasource()).
+			Datasource(g.core.MetricsDatasource()).
 			IncludeAll(true).
 			Multi(true).
 			Refresh(dashboard.VariableRefreshOnTimeRangeChanged),

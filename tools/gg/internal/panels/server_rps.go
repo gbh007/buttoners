@@ -30,5 +30,5 @@ func (g Generator) ServerRPS() *timeseries.PanelBuilder {
 		}).
 		Legend(g.core.SimpleLegend()).
 		Unit(units.RequestsPerSecond).
-		Datasource(g.core.MetricDatasource())
+		Datasource(g.core.MetricsDatasource())
 }

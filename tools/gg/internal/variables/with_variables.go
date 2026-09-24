@@ -8,8 +8,10 @@ import (
 func (g Generator) WithVariables(builder *dashboard.DashboardBuilder) {
 	g.WithVariableMetrics(builder)
 	g.WithVariableLogs(builder)
+	g.WithVariableTraces(builder)
+
 	g.WithVariableService(builder)
 	g.WithVariablePod(builder)
+
 	g.WithVariableQuantile(builder)
-	g.WithVariableLogs(builder)
 }

@@ -643,6 +643,49 @@
             "sortOrder": "Descending",
             "dedupStrategy": ""
          }
+      },
+      {
+         "type": "table",
+         "targets": [
+            {
+               "queryType": "traceql",
+               "query": "{resource.service.name=$service}",
+               "filters": []
+            }
+         ],
+         "title": "Traces",
+         "transparent": false,
+         "datasource": {
+            "type": "tempo",
+            "uid": "${traces}"
+         },
+         "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 39
+         },
+         "repeatDirection": "h",
+         "options": {
+            "frameIndex": 0,
+            "showHeader": true,
+            "showTypeIcons": false,
+            "footer": {
+               "show": false,
+               "reducer": null,
+               "countRows": false
+            },
+            "cellHeight": "sm"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "align": "auto",
+                  "inspect": false
+               }
+            },
+            "overrides": []
+         }
       }
    ],
    "templating": {
@@ -666,6 +709,19 @@
             "hide": 2,
             "skipUrlSync": false,
             "query": "victoriametrics-logs-datasource",
+            "multi": false,
+            "allowCustomValue": true,
+            "includeAll": false,
+            "auto": false,
+            "auto_min": "10s",
+            "auto_count": 30
+         },
+         {
+            "type": "datasource",
+            "name": "traces",
+            "hide": 2,
+            "skipUrlSync": false,
+            "query": "tempo",
             "multi": false,
             "allowCustomValue": true,
             "includeAll": false,
@@ -717,19 +773,6 @@
                "text": ".80",
                "value": ".80"
             },
-            "multi": false,
-            "allowCustomValue": true,
-            "includeAll": false,
-            "auto": false,
-            "auto_min": "10s",
-            "auto_count": 30
-         },
-         {
-            "type": "datasource",
-            "name": "logs",
-            "hide": 2,
-            "skipUrlSync": false,
-            "query": "victoriametrics-logs-datasource",
             "multi": false,
             "allowCustomValue": true,
             "includeAll": false,

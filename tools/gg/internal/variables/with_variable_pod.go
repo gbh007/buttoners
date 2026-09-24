@@ -11,7 +11,7 @@ func (g Generator) WithVariablePod(builder *dashboard.DashboardBuilder) {
 			Query(dashboard.StringOrMap{
 				String: new(`label_values(process_cpu_seconds_total{service=~"$service"}, pod)`),
 			}).
-			Datasource(g.core.MetricDatasource()).
+			Datasource(g.core.MetricsDatasource()).
 			IncludeAll(true).
 			Multi(true).
 			Refresh(dashboard.VariableRefreshOnTimeRangeChanged),

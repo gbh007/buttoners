@@ -23,4 +23,5 @@ func (g Generator) WithPanels(builder *dashboard.DashboardBuilder) {
 	// Logs
 	builder.WithPanel(WithPanelSize(g.Logs(), PanelSizeFull))
 	// Traces
+	builder.WithPanel(WithPanelSize(g.Traces(), PanelSizeFull))
 }

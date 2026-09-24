@@ -37,5 +37,5 @@ func (g Generator) ClientLatency() *timeseries.PanelBuilder {
 		}).
 		Legend(g.core.SimpleLegend()).
 		Unit(units.Seconds).
-		Datasource(g.core.MetricDatasource())
+		Datasource(g.core.MetricsDatasource())
 }

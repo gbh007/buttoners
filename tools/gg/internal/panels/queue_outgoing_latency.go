@@ -23,5 +23,5 @@ func (g Generator) QueueOutgoingLatency() *timeseries.PanelBuilder {
 		}).
 		Legend(g.core.SimpleLegend()).
 		Unit(units.MessagesPerSecond).
-		Datasource(g.core.MetricDatasource())
+		Datasource(g.core.MetricsDatasource())
 }

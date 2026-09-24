@@ -23,7 +23,7 @@ func (Core) SimpleLegend() *common.VizLegendOptionsBuilder {
 		ShowLegend(true)
 }
 
-func (Core) MetricDatasource() common.DataSourceRef {
+func (Core) MetricsDatasource() common.DataSourceRef {
 	return common.DataSourceRef{
 		Type: new("prometheus"),
 		Uid:  new("${metrics}"),
@@ -37,6 +37,13 @@ func (Core) LogsDatasource() common.DataSourceRef {
 	}
 }
 
+func (Core) TracesDatasource() common.DataSourceRef {
+	return common.DataSourceRef{
+		Type: new("tempo"),
+		Uid:  new("${traces}"),
+	}
+}
+
 func (Core) InstanceFilter() string {
 	return `service=~"$service", pod=~"$pod"`
 }
@@ -44,6 +51,12 @@ func (Core) InstanceFilter() string {
 func (Core) LogInstanceFilter() string {
 	return `service: ($service) pod: ($pod)`
 }
+
+
+func (Core) TraceInstanceFilter() string {
+	return `{resource.service.name=$service}`
+}
+
 
 func (c Core) LatencyWithInstanceFilter(metricName string, additionalLables []string) string {
 	return fmt.Sprintf(
