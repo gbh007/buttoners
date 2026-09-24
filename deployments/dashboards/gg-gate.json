@@ -116,52 +116,6 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
-               "legendFormat": "queue reader =\u003e {{server_addr}}"
-            }
-         ],
-         "title": "Входящий MPS",
-         "transparent": false,
-         "datasource": {
-            "type": "prometheus",
-            "uid": "${metrics}"
-         },
-         "gridPos": {
-            "h": 9,
-            "w": 6,
-            "x": 12,
-            "y": 0
-         },
-         "repeatDirection": "h",
-         "options": {
-            "legend": {
-               "displayMode": "table",
-               "placement": "bottom",
-               "showLegend": true,
-               "sortBy": "Mean",
-               "sortDesc": true,
-               "calcs": [
-                  "mean",
-                  "lastNotNull"
-               ]
-            },
-            "tooltip": {
-               "mode": "",
-               "sort": ""
-            }
-         },
-         "fieldConfig": {
-            "defaults": {
-               "unit": "mps",
-               "custom": {}
-            },
-            "overrides": []
-         }
-      },
-      {
-         "type": "timeseries",
-         "targets": [
-            {
                "expr": "sum(rate(buttoners_queue_writer_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
                "legendFormat": "queue writer =\u003e {{target_host}}"
             }
@@ -175,7 +129,7 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 18,
+            "x": 12,
             "y": 0
          },
          "repeatDirection": "h",
@@ -221,8 +175,8 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 0,
-            "y": 9
+            "x": 18,
+            "y": 0
          },
          "repeatDirection": "h",
          "options": {
@@ -271,53 +225,7 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 6,
-            "y": 9
-         },
-         "repeatDirection": "h",
-         "options": {
-            "legend": {
-               "displayMode": "table",
-               "placement": "bottom",
-               "showLegend": true,
-               "sortBy": "Mean",
-               "sortDesc": true,
-               "calcs": [
-                  "mean",
-                  "lastNotNull"
-               ]
-            },
-            "tooltip": {
-               "mode": "",
-               "sort": ""
-            }
-         },
-         "fieldConfig": {
-            "defaults": {
-               "unit": "s",
-               "custom": {}
-            },
-            "overrides": []
-         }
-      },
-      {
-         "type": "timeseries",
-         "targets": [
-            {
-               "expr": "histogram_quantile($quantile, sum(rate(buttoners_queue_reader_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
-               "legendFormat": "queue reader =\u003e {{server_addr}}"
-            }
-         ],
-         "title": "Входящие задержки очередей $quantile",
-         "transparent": false,
-         "datasource": {
-            "type": "prometheus",
-            "uid": "${metrics}"
-         },
-         "gridPos": {
-            "h": 9,
-            "w": 6,
-            "x": 12,
+            "x": 0,
             "y": 9
          },
          "repeatDirection": "h",
@@ -363,7 +271,7 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 18,
+            "x": 6,
             "y": 9
          },
          "repeatDirection": "h",
@@ -409,8 +317,8 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 0,
-            "y": 18
+            "x": 12,
+            "y": 9
          },
          "repeatDirection": "h",
          "options": {
@@ -463,54 +371,8 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 6,
-            "y": 18
-         },
-         "repeatDirection": "h",
-         "options": {
-            "legend": {
-               "displayMode": "table",
-               "placement": "bottom",
-               "showLegend": true,
-               "sortBy": "Mean",
-               "sortDesc": true,
-               "calcs": [
-                  "mean",
-                  "lastNotNull"
-               ]
-            },
-            "tooltip": {
-               "mode": "",
-               "sort": ""
-            }
-         },
-         "fieldConfig": {
-            "defaults": {
-               "unit": "percentunit",
-               "custom": {}
-            },
-            "overrides": []
-         }
-      },
-      {
-         "type": "timeseries",
-         "targets": [
-            {
-               "expr": "sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=\"err\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
-               "legendFormat": "queue reader =\u003e {{server_addr}}"
-            }
-         ],
-         "title": "Входящий error rate очередей",
-         "transparent": false,
-         "datasource": {
-            "type": "prometheus",
-            "uid": "${metrics}"
-         },
-         "gridPos": {
-            "h": 9,
-            "w": 6,
-            "x": 12,
-            "y": 18
+            "x": 18,
+            "y": 9
          },
          "repeatDirection": "h",
          "options": {
@@ -555,7 +417,7 @@
          "gridPos": {
             "h": 9,
             "w": 6,
-            "x": 18,
+            "x": 0,
             "y": 18
          },
          "repeatDirection": "h",
@@ -600,8 +462,8 @@
          "gridPos": {
             "h": 12,
             "w": 24,
-            "x": 0,
-            "y": 27
+            "x": 6,
+            "y": 18
          },
          "repeatDirection": "h",
          "options": {
@@ -635,7 +497,7 @@
             "h": 12,
             "w": 24,
             "x": 0,
-            "y": 39
+            "y": 30
          },
          "repeatDirection": "h",
          "options": {

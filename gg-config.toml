@@ -18,7 +18,7 @@ name = "Buttoners service auth"
 uid = "gg-auth"
 output_file = "deployments/dashboards/gg-auth.json"
 service_filter = "auth"
-modules = ["logs", "traces", "redis", "http_client", "http_server"]
+modules = ["logs", "traces", "redis", "http_server"]
 
 [[boards]]
 name = "Buttoners service gate"
@@ -31,7 +31,6 @@ modules = [
     "redis",
     "http_client",
     "grpc_server",
-    "queue_reader",
     "queue_writer",
 ]
 
