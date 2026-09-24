@@ -8,20 +8,27 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/units"
 )
 
-func (g Generator) QueueIngoingMPS() *timeseries.PanelBuilder {
+func (g Generator) ServerLatency() *timeseries.PanelBuilder {
 	return timeseries.
 		NewPanelBuilder().
-		Title("Входящий MPS").
+		Title("Входящие задержки").
 		Targets([]cog.Builder[variants.Dataquery]{
 			prometheus.
 				NewDataqueryBuilder().
-				Expr(g.core.RPSWithInstanceFilterFromHistogram(
-					"buttoners_queue_reader_handle_seconds",
+				Expr(g.core.LatencyWithInstanceFilter(
+					"buttoners_grpc_server_handle_seconds",
 					[]string{"server_addr"},
 				)).
-				LegendFormat("queue reader => {{server_addr}}"),
+				LegendFormat("grpc server => {{server_addr}}"),
+			prometheus.
+				NewDataqueryBuilder().
+				Expr(g.core.LatencyWithInstanceFilter(
+					"buttoners_http_server_handle_seconds",
+					[]string{"server_addr"},
+				)).
+				LegendFormat("http server => {{server_addr}}"),
 		}).
 		Legend(g.core.SimpleLegend()).
-		Unit(units.MessagesPerSecond).
+		Unit(units.RequestsPerSecond).
 		Datasource(g.core.MetricDatasource())
 }

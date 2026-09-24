@@ -36,7 +36,7 @@
          },
          "gridPos": {
             "h": 9,
-            "w": 12,
+            "w": 6,
             "x": 0,
             "y": 0
          },
@@ -90,8 +90,8 @@
          },
          "gridPos": {
             "h": 9,
-            "w": 12,
-            "x": 12,
+            "w": 6,
+            "x": 6,
             "y": 0
          },
          "repeatDirection": "h",
@@ -136,9 +136,9 @@
          },
          "gridPos": {
             "h": 9,
-            "w": 12,
-            "x": 0,
-            "y": 9
+            "w": 6,
+            "x": 12,
+            "y": 0
          },
          "repeatDirection": "h",
          "options": {
@@ -182,8 +182,204 @@
          },
          "gridPos": {
             "h": 9,
-            "w": 12,
+            "w": 6,
+            "x": 18,
+            "y": 0
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "mps",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_grpc_server_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
+               "legendFormat": "grpc server =\u003e {{server_addr}}"
+            },
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_http_server_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
+               "legendFormat": "http server =\u003e {{server_addr}}"
+            }
+         ],
+         "title": "Входящие задержки",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 0,
+            "y": 9
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "reqps",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_grpc_client_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
+               "legendFormat": "grpc client =\u003e {{target_host}}"
+            },
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_http_client_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
+               "legendFormat": "http client =\u003e {{target_host}}"
+            },
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_redis_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
+               "legendFormat": "redis =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящие задержки",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 6,
+            "y": 9
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "s",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_queue_reader_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
+               "legendFormat": "queue reader =\u003e {{server_addr}}"
+            }
+         ],
+         "title": "Входящие задержки очередей",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
             "x": 12,
+            "y": 9
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "s",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "histogram_quantile($quantile, sum(rate(buttoners_queue_writer_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
+               "legendFormat": "queue writer =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящие задержки очередей",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 18,
             "y": 9
          },
          "repeatDirection": "h",
