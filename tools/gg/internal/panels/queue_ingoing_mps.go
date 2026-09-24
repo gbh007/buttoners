@@ -1,6 +1,7 @@
 package panels
 
 import (
+	"github.com/gbh007/buttoners/tools/gg/internal/core"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/cog/variants"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
@@ -9,10 +10,11 @@ import (
 )
 
 func (g Generator) QueueIngoingMPS() *timeseries.PanelBuilder {
-	return timeseries.
-		NewPanelBuilder().
-		Title("Входящий MPS").
-		Targets([]cog.Builder[variants.Dataquery]{
+	targets := []cog.Builder[variants.Dataquery]{}
+
+	if g.core.HasModule(core.ModuleQueueReader) {
+		targets = append(
+			targets,
 			prometheus.
 				NewDataqueryBuilder().
 				Expr(g.core.RPSWithInstanceFilterFromHistogram(
@@ -20,7 +22,17 @@ func (g Generator) QueueIngoingMPS() *timeseries.PanelBuilder {
 					[]string{"server_addr"},
 				)).
 				LegendFormat("queue reader => {{server_addr}}"),
-		}).
+		)
+	}
+
+	if len(targets) == 0 {
+		panic("unexpected behavior")
+	}
+
+	return timeseries.
+		NewPanelBuilder().
+		Title("Входящий MPS").
+		Targets(targets).
 		Legend(g.core.SimpleLegend()).
 		Unit(units.MessagesPerSecond).
 		Datasource(g.core.MetricsDatasource())

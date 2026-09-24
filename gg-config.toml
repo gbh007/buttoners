@@ -3,45 +3,76 @@ name = "Buttoners ALL"
 uid = "gg-main"
 output_file = "deployments/dashboards/gg-main.json"
 service_filter = ".+"
+modules = [
+    "redis",
+    "http_client",
+    "http_server",
+    "grpc_client",
+    "grpc_server",
+    "queue_reader",
+    "queue_writer",
+]
 
 [[boards]]
 name = "Buttoners service auth"
 uid = "gg-auth"
 output_file = "deployments/dashboards/gg-auth.json"
 service_filter = "auth"
+modules = ["logs", "traces", "redis", "http_client", "http_server"]
 
 [[boards]]
 name = "Buttoners service gate"
 uid = "gg-gate"
 output_file = "deployments/dashboards/gg-gate.json"
 service_filter = "gate"
+modules = [
+    "logs",
+    "traces",
+    "redis",
+    "http_client",
+    "grpc_server",
+    "queue_reader",
+    "queue_writer",
+]
 
 [[boards]]
 name = "Buttoners service handler"
 uid = "gg-handler"
 output_file = "deployments/dashboards/gg-handler.json"
 service_filter = "handler"
+modules = ["logs", "traces", "queue_reader", "queue_writer"]
 
 [[boards]]
 name = "Buttoners service legacy"
 uid = "gg-legacy"
 output_file = "deployments/dashboards/gg-legacy.json"
 service_filter = "legacy"
+modules = [
+    "logs",
+    "traces",
+    "http_client",
+    "http_server",
+    "queue_reader",
+    "queue_writer",
+]
 
 [[boards]]
 name = "Buttoners service log"
 uid = "gg-log"
 output_file = "deployments/dashboards/gg-log.json"
 service_filter = "log"
+modules = ["logs", "traces", "http_server", "queue_reader"]
 
 [[boards]]
 name = "Buttoners service notification"
 uid = "gg-notification"
 output_file = "deployments/dashboards/gg-notification.json"
 service_filter = "notification"
+modules = ["logs", "traces", "http_server"]
 
 [[boards]]
 name = "Buttoners service worker"
 uid = "gg-worker"
 output_file = "deployments/dashboards/gg-worker.json"
 service_filter = "worker"
+modules = ["logs", "traces", "http_client", "queue_reader"]

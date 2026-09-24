@@ -12,10 +12,11 @@ import (
 
 type Config struct {
 	Boards []struct {
-		UID           string `toml:"uid"`
-		Name          string `toml:"name"`
-		OutputFile    string `toml:"output_file"`
-		ServiceFilter string `toml:"service_filter"`
+		UID           string   `toml:"uid"`
+		Name          string   `toml:"name"`
+		OutputFile    string   `toml:"output_file"`
+		ServiceFilter string   `toml:"service_filter"`
+		Modules       []string `toml:"modules"`
 	} `toml:"boards"`
 }
 
@@ -40,16 +41,22 @@ func main() {
 	}
 
 	for i, board := range cfg.Boards {
-
 		if board.UID == "" {
 			logger.Error("empty board uid", "number", i)
+			continue
 		}
 
 		if board.OutputFile == "" {
 			logger.Error("empty board output file", "number", i)
+			continue
 		}
 
-		g := generator.New(board.UID, board.Name, board.ServiceFilter)
+		if len(board.Modules) == 0 {
+			logger.Error("empty board modules", "number", i)
+			continue
+		}
+
+		g := generator.New(board.UID, board.Name, board.ServiceFilter, board.Modules)
 
 		dashboardModel, err := g.Build()
 		if err != nil {

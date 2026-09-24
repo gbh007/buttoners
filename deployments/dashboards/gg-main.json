@@ -224,7 +224,7 @@
                "legendFormat": "http server =\u003e {{server_addr}}"
             }
          ],
-         "title": "Входящие задержки",
+         "title": "Входящие задержки $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -278,7 +278,7 @@
                "legendFormat": "redis =\u003e {{target_host}}"
             }
          ],
-         "title": "Исходящие задержки",
+         "title": "Исходящие задержки $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -324,7 +324,7 @@
                "legendFormat": "queue reader =\u003e {{server_addr}}"
             }
          ],
-         "title": "Входящие задержки очередей",
+         "title": "Входящие задержки очередей $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -370,7 +370,7 @@
                "legendFormat": "queue writer =\u003e {{target_host}}"
             }
          ],
-         "title": "Исходящие задержки очередей",
+         "title": "Исходящие задержки очередей $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -608,81 +608,6 @@
             "defaults": {
                "unit": "percentunit",
                "custom": {}
-            },
-            "overrides": []
-         }
-      },
-      {
-         "type": "logs",
-         "targets": [
-            {
-               "expr": "service: ($service) pod: ($pod)"
-            }
-         ],
-         "title": "Logs",
-         "transparent": false,
-         "datasource": {
-            "type": "victoriametrics-logs-datasource",
-            "uid": "${logs}"
-         },
-         "gridPos": {
-            "h": 12,
-            "w": 24,
-            "x": 0,
-            "y": 27
-         },
-         "repeatDirection": "h",
-         "options": {
-            "showLabels": false,
-            "showCommonLabels": false,
-            "showTime": false,
-            "showLogContextToggle": false,
-            "wrapLogMessage": false,
-            "prettifyLogMessage": false,
-            "enableLogDetails": true,
-            "sortOrder": "Descending",
-            "dedupStrategy": ""
-         }
-      },
-      {
-         "type": "table",
-         "targets": [
-            {
-               "queryType": "traceql",
-               "query": "{resource.service.name=$service}",
-               "filters": []
-            }
-         ],
-         "title": "Traces",
-         "transparent": false,
-         "datasource": {
-            "type": "tempo",
-            "uid": "${traces}"
-         },
-         "gridPos": {
-            "h": 12,
-            "w": 24,
-            "x": 0,
-            "y": 39
-         },
-         "repeatDirection": "h",
-         "options": {
-            "frameIndex": 0,
-            "showHeader": true,
-            "showTypeIcons": false,
-            "footer": {
-               "show": false,
-               "reducer": null,
-               "countRows": false
-            },
-            "cellHeight": "sm"
-         },
-         "fieldConfig": {
-            "defaults": {
-               "custom": {
-                  "align": "auto",
-                  "inspect": false
-               }
             },
             "overrides": []
          }

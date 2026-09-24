@@ -20,10 +20,6 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
-               "legendFormat": "grpc server =\u003e {{server_addr}}"
-            },
-            {
                "expr": "sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
                "legendFormat": "http server =\u003e {{server_addr}}"
             }
@@ -70,16 +66,8 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "grpc client =\u003e {{target_host}}"
-            },
-            {
                "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
                "legendFormat": "http client =\u003e {{target_host}}"
-            },
-            {
-               "expr": "sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "redis =\u003e {{target_host}}"
             }
          ],
          "title": "Исходящий RPS",
@@ -216,15 +204,11 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "histogram_quantile($quantile, sum(rate(buttoners_grpc_server_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
-               "legendFormat": "grpc server =\u003e {{server_addr}}"
-            },
-            {
                "expr": "histogram_quantile($quantile, sum(rate(buttoners_http_server_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr, le))",
                "legendFormat": "http server =\u003e {{server_addr}}"
             }
          ],
-         "title": "Входящие задержки",
+         "title": "Входящие задержки $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -266,19 +250,11 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "histogram_quantile($quantile, sum(rate(buttoners_grpc_client_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
-               "legendFormat": "grpc client =\u003e {{target_host}}"
-            },
-            {
                "expr": "histogram_quantile($quantile, sum(rate(buttoners_http_client_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
                "legendFormat": "http client =\u003e {{target_host}}"
-            },
-            {
-               "expr": "histogram_quantile($quantile, sum(rate(buttoners_redis_handle_seconds_bucket{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host, le))",
-               "legendFormat": "redis =\u003e {{target_host}}"
             }
          ],
-         "title": "Исходящие задержки",
+         "title": "Исходящие задержки $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -324,7 +300,7 @@
                "legendFormat": "queue reader =\u003e {{server_addr}}"
             }
          ],
-         "title": "Входящие задержки очередей",
+         "title": "Входящие задержки очередей $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -370,7 +346,7 @@
                "legendFormat": "queue writer =\u003e {{target_host}}"
             }
          ],
-         "title": "Исходящие задержки очередей",
+         "title": "Исходящие задержки очередей $quantile",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -411,10 +387,6 @@
       {
          "type": "timeseries",
          "targets": [
-            {
-               "expr": "sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status!=\"OK\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
-               "legendFormat": "grpc server =\u003e {{server_addr}}"
-            },
             {
                "expr": "sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"4\\\\d{2}\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
                "legendFormat": "http server 4xx =\u003e {{server_addr}}"
@@ -466,20 +438,12 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status!=\"OK\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "grpc client =\u003e {{target_host}}"
-            },
-            {
                "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"4\\\\d{2}\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
                "legendFormat": "http client 4xx =\u003e {{target_host}}"
             },
             {
                "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"5\\\\d{2}\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
                "legendFormat": "http client 5xx =\u003e {{target_host}}"
-            },
-            {
-               "expr": "sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=\"err\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "redis =\u003e {{target_host}}"
             }
          ],
          "title": "Исходящий error rate",

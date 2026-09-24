@@ -22,7 +22,7 @@ type Generator struct {
 	core core.Core
 }
 
-func New(uid string, name string, dirtyServiceFilter string) Generator {
+func New(uid string, name string, dirtyServiceFilter string, modules []string) Generator {
 	plugins.RegisterDefaultPlugins()
 
 	return Generator{
@@ -30,6 +30,7 @@ func New(uid string, name string, dirtyServiceFilter string) Generator {
 		name: name,
 		core: core.Core{
 			DirtyServiceFilter: dirtyServiceFilter,
+			EnabledModules:     modules,
 		},
 	}
 }
