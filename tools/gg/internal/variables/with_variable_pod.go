@@ -13,7 +13,6 @@ func (g Generator) WithVariablePod(builder *dashboard.DashboardBuilder) {
 			}).
 			Datasource(g.core.MetricDatasource()).
 			IncludeAll(true).
-			AllValue(".+").
 			Multi(true).
 			Refresh(dashboard.VariableRefreshOnTimeRangeChanged),
 	)

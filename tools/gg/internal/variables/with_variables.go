@@ -4,14 +4,12 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 )
 
+// FIXME: инвертировать переменные на подобии панелей
 func (g Generator) WithVariables(builder *dashboard.DashboardBuilder) {
-	builder.WithVariable(
-		dashboard.
-			NewDatasourceVariableBuilder("metrics").
-			Type("prometheus"),
-	)
-
+	g.WithVariableMetrics(builder)
+	g.WithVariableLogs(builder)
 	g.WithVariableService(builder)
 	g.WithVariablePod(builder)
 	g.WithVariableQuantile(builder)
+	g.WithVariableLogs(builder)
 }

@@ -21,5 +21,6 @@ func (g Generator) WithPanels(builder *dashboard.DashboardBuilder) {
 	builder.WithPanel(WithPanelSize(g.QueueIngoingErrorRate(), PanelSizeQuarterHigh))
 	builder.WithPanel(WithPanelSize(g.QueueOutgoingErrorRate(), PanelSizeQuarterHigh))
 	// Logs
+	builder.WithPanel(WithPanelSize(g.Logs(), PanelSizeFull))
 	// Traces
 }

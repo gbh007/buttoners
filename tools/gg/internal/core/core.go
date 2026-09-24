@@ -30,8 +30,19 @@ func (Core) MetricDatasource() common.DataSourceRef {
 	}
 }
 
+func (Core) LogsDatasource() common.DataSourceRef {
+	return common.DataSourceRef{
+		Type: new("victoriametrics-logs-datasource"),
+		Uid:  new("${logs}"),
+	}
+}
+
 func (Core) InstanceFilter() string {
 	return `service=~"$service", pod=~"$pod"`
+}
+
+func (Core) LogInstanceFilter() string {
+	return `service: ($service) pod: ($pod)`
 }
 
 func (c Core) LatencyWithInstanceFilter(metricName string, additionalLables []string) string {
