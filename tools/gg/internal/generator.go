@@ -16,16 +16,18 @@ import (
 // process_cpu_seconds_total {instance="172.20.0.17:8082",job="prometheus.scrape.container_metrics",pod="buttoners-auth-1",service="auth"}
 
 type Generator struct {
-	uid string
+	uid  string
+	name string
 
 	core core.Core
 }
 
-func New(uid string, dirtyServiceFilter string) Generator {
+func New(uid string, name string, dirtyServiceFilter string) Generator {
 	plugins.RegisterDefaultPlugins()
 
 	return Generator{
-		uid: uid,
+		uid:  uid,
+		name: name,
 		core: core.Core{
 			DirtyServiceFilter: dirtyServiceFilter,
 		},
@@ -34,7 +36,7 @@ func New(uid string, dirtyServiceFilter string) Generator {
 
 func (g Generator) Build() (dashboard.Dashboard, error) {
 	builder := dashboard.
-		NewDashboardBuilder("Buttoners").
+		NewDashboardBuilder(g.name).
 		Uid(g.uid).
 		Timezone("Asia/Krasnoyarsk").
 		Time("now-4h", "now").
@@ -44,12 +46,10 @@ func (g Generator) Build() (dashboard.Dashboard, error) {
 		Links([]cog.Builder[dashboard.DashboardLink]{
 			dashboard.NewDashboardLinkBuilder("Buttoners boards").
 				AsDropdown(true).
-				TargetBlank(true).
 				KeepTime(true).
 				Type(dashboard.DashboardLinkTypeDashboards).
 				Tags([]string{"buttoners"}),
 			dashboard.NewDashboardLinkBuilder("Github").
-				// Icon("github").
 				TargetBlank(true).
 				Type(dashboard.DashboardLinkTypeLink).
 				Url("https://github.com/gbh007/buttoners"),

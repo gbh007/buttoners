@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Boards []struct {
 		UID           string `toml:"uid"`
+		Name          string `toml:"name"`
 		OutputFile    string `toml:"output_file"`
 		ServiceFilter string `toml:"service_filter"`
 	} `toml:"boards"`
@@ -48,7 +49,7 @@ func main() {
 			logger.Error("empty board output file", "number", i)
 		}
 
-		g := generator.New(board.UID, board.ServiceFilter)
+		g := generator.New(board.UID, board.Name, board.ServiceFilter)
 
 		dashboardModel, err := g.Build()
 		if err != nil {

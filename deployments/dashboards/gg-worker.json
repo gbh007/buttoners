@@ -1,6 +1,6 @@
 {
-   "uid": "gg-main",
-   "title": "Buttoners ALL",
+   "uid": "gg-worker",
+   "title": "Buttoners service worker",
    "tags": [
       "buttoners"
    ],
@@ -231,7 +231,7 @@
             "type": "query",
             "name": "service",
             "skipUrlSync": false,
-            "query": "label_values(process_cpu_seconds_total{service=~\".+\"}, service)",
+            "query": "label_values(process_cpu_seconds_total{service=~\"worker\"}, service)",
             "datasource": {
                "type": "prometheus",
                "uid": "${metrics}"
