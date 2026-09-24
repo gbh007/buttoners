@@ -1,6 +1,9 @@
 {
    "uid": "gg-main",
    "title": "Buttoners",
+   "tags": [
+      "buttoners"
+   ],
    "timezone": "Asia/Krasnoyarsk",
    "editable": true,
    "graphTooltip": 1,
@@ -17,35 +20,15 @@
          "type": "timeseries",
          "targets": [
             {
-               "expr": "sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "grpc client =\u003e {{target_host}}"
-            },
-            {
                "expr": "sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
                "legendFormat": "grpc server =\u003e {{server_addr}}"
             },
             {
-               "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "http client =\u003e {{target_host}}"
-            },
-            {
                "expr": "sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
                "legendFormat": "http server =\u003e {{server_addr}}"
-            },
-            {
-               "expr": "sum(rate(buttoners_queue_writer_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "queue writer =\u003e {{target_host}}"
-            },
-            {
-               "expr": "sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
-               "legendFormat": "queue reader =\u003e {{server_addr}}"
-            },
-            {
-               "expr": "sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
-               "legendFormat": "redis =\u003e {{target_host}}"
             }
          ],
-         "title": "RPS",
+         "title": "Входящий RPS",
          "transparent": false,
          "datasource": {
             "type": "prometheus",
@@ -82,6 +65,152 @@
             },
             "overrides": []
          }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "grpc client =\u003e {{target_host}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "http client =\u003e {{target_host}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "redis =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящий RPS",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 0
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "reqps",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
+               "legendFormat": "queue reader =\u003e {{server_addr}}"
+            }
+         ],
+         "title": "Входящий MPS",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 9
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "mps",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_queue_writer_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "queue writer =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящий MPS",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 9
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "mps",
+               "custom": {}
+            },
+            "overrides": []
+         }
       }
    ],
    "templating": {
@@ -102,15 +231,10 @@
             "type": "query",
             "name": "service",
             "skipUrlSync": false,
-            "query": "label_values(process_cpu_seconds_total, service)",
+            "query": "label_values(process_cpu_seconds_total{service=~\".+\"}, service)",
             "datasource": {
                "type": "prometheus",
                "uid": "${metrics}"
-            },
-            "current": {
-               "selected": true,
-               "text": null,
-               "value": null
             },
             "multi": true,
             "allowCustomValue": true,
@@ -130,11 +254,6 @@
                "type": "prometheus",
                "uid": "${metrics}"
             },
-            "current": {
-               "selected": true,
-               "text": null,
-               "value": null
-            },
             "multi": true,
             "allowCustomValue": true,
             "refresh": 2,
@@ -143,8 +262,54 @@
             "auto": false,
             "auto_min": "10s",
             "auto_count": 30
+         },
+         {
+            "type": "custom",
+            "name": "quantile",
+            "skipUrlSync": false,
+            "query": ".50,.80,.95,.99",
+            "current": {
+               "selected": true,
+               "text": ".80",
+               "value": ".80"
+            },
+            "multi": false,
+            "allowCustomValue": true,
+            "includeAll": false,
+            "auto": false,
+            "auto_min": "10s",
+            "auto_count": 30
          }
       ]
    },
-   "annotations": {}
+   "annotations": {},
+   "links": [
+      {
+         "title": "Buttoners boards",
+         "type": "dashboards",
+         "icon": "",
+         "tooltip": "",
+         "tags": [
+            "buttoners"
+         ],
+         "asDropdown": true,
+         "placement": "inControlsMenu",
+         "targetBlank": true,
+         "includeVars": false,
+         "keepTime": true
+      },
+      {
+         "title": "Github",
+         "type": "link",
+         "icon": "",
+         "tooltip": "",
+         "url": "https://github.com/gbh007/buttoners",
+         "tags": [],
+         "asDropdown": false,
+         "placement": "inControlsMenu",
+         "targetBlank": true,
+         "includeVars": false,
+         "keepTime": false
+      }
+   ]
 }

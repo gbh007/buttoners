@@ -36,8 +36,12 @@ func NewHTTPMiddleware(
 
 func (h *HTTPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tStart := time.Now()
-	host := r.URL.Host
+	host := r.Host
 	path := r.URL.Path
+
+	if host == "" {
+		host = r.URL.Host
+	}
 
 	h.metrics.IncActive(host, path, r.Method)
 	defer h.metrics.DecActive(host, path, r.Method)

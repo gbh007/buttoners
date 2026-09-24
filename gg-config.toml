@@ -1,5 +1,4 @@
-to = "deployments/dashboards/gg-main.json"
-
-[grafana]
-# addr = "http://grafana.localhost/api"
+[[boards]]
 uid = "gg-main"
+output_file = "deployments/dashboards/gg-main.json"
+service_filter = ".+"

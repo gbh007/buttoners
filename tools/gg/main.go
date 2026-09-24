@@ -3,26 +3,19 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"net/url"
+	"log/slog"
 	"os"
-
-	"github.com/go-openapi/strfmt"
-	goapi "github.com/grafana/grafana-openapi-client-go/client"
-	"github.com/grafana/grafana-openapi-client-go/models"
 
 	"github.com/BurntSushi/toml"
 	generator "github.com/gbh007/buttoners/tools/gg/internal"
 )
 
 type Config struct {
-	Grafana struct {
-		Addr   string `toml:"addr"`
-		Token  string `toml:"token"`
-		Folder string `toml:"folder"`
-		UID    string `toml:"uid"`
-	} `toml:"grafana"`
-	To       string   `toml:"to"`
-	Services []string `toml:"services"`
+	Boards []struct {
+		UID           string `toml:"uid"`
+		OutputFile    string `toml:"output_file"`
+		ServiceFilter string `toml:"service_filter"`
+	} `toml:"boards"`
 }
 
 func main() {
@@ -31,59 +24,38 @@ func main() {
 	flag.Parse()
 
 	var cfg Config
+	logger := slog.Default()
 
 	f, err := os.Open(*configPath)
 	if err != nil {
-		panic(err)
+		logger.Error("open config", "error", err)
+		os.Exit(1)
 	}
 
 	_, err = toml.NewDecoder(f).Decode(&cfg)
 	if err != nil {
-		panic(err)
+		logger.Error("decode config", "error", err)
+		os.Exit(1)
 	}
 
-	if cfg.Grafana.UID == "" {
-		panic("empty uid")
-	}
+	for i, board := range cfg.Boards {
 
-	g := generator.New(cfg.Grafana.UID, cfg.Services)
+		if board.UID == "" {
+			logger.Error("empty board uid", "number", i)
+		}
 
-	dashboardModel, err := g.Build()
-	if err != nil {
-		panic(err)
-	}
+		if board.OutputFile == "" {
+			logger.Error("empty board output file", "number", i)
+		}
 
-	if cfg.Grafana.Addr != "" {
-		u, err := url.Parse(cfg.Grafana.Addr)
+		g := generator.New(board.UID, board.ServiceFilter)
+
+		dashboardModel, err := g.Build()
 		if err != nil {
 			panic(err)
 		}
 
-		transportCfg := &goapi.TransportConfig{
-			Host:     u.Host,
-			BasePath: u.Path,
-			Schemes:  []string{u.Scheme},
-			APIKey:   cfg.Grafana.Token,
-		}
-
-		client := goapi.NewHTTPClientWithConfig(strfmt.Default, transportCfg)
-
-		response, err := client.Dashboards.PostDashboard(&models.SaveDashboardCommand{
-			FolderUID: cfg.Grafana.Folder,
-			Dashboard: dashboardModel,
-			Overwrite: true,
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		if *response.Payload.Status != "success" {
-			panic(*response.Payload.Status)
-		}
-	}
-
-	if cfg.To != "" {
-		out, err := os.Create(cfg.To)
+		out, err := os.Create(board.OutputFile)
 		if err != nil {
 			panic(err)
 		}
