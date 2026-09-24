@@ -51,3 +51,16 @@ func (c Core) RPSWithInstanceFilterFromHistogram(metricName string, additionalLa
 		strings.Join(additionalLables, ", "),
 	)
 }
+
+func (c Core) ErrorRateWithInstanceFilterFromHistogram(metricName string, additionalLables []string, errorFilter string) string {
+	return fmt.Sprintf(
+		`sum(rate(%s_count{%s, %s}[$__rate_interval])) by (%s) or vector(0)/ sum(rate(%s_count{%s}[$__rate_interval])) by (%s)`,
+		metricName,
+		c.InstanceFilter(),
+		errorFilter,
+		strings.Join(additionalLables, ", "),
+		metricName,
+		c.InstanceFilter(),
+		strings.Join(additionalLables, ", "),
+	)
+}

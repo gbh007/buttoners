@@ -16,5 +16,10 @@ func (g Generator) WithPanels(builder *dashboard.DashboardBuilder) {
 	builder.WithPanel(WithPanelSize(g.QueueIngoingLatency(), PanelSizeQuarterHigh))
 	builder.WithPanel(WithPanelSize(g.QueueOutgoingLatency(), PanelSizeQuarterHigh))
 	// Error rate
-	// Gorutines
+	builder.WithPanel(WithPanelSize(g.ServerErrorRate(), PanelSizeQuarterHigh))
+	builder.WithPanel(WithPanelSize(g.ClientErrorRate(), PanelSizeQuarterHigh))
+	builder.WithPanel(WithPanelSize(g.QueueIngoingErrorRate(), PanelSizeQuarterHigh))
+	builder.WithPanel(WithPanelSize(g.QueueOutgoingErrorRate(), PanelSizeQuarterHigh))
+	// Logs
+	// Traces
 }

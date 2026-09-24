@@ -407,6 +407,210 @@
             },
             "overrides": []
          }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status!=\"OK\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_grpc_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
+               "legendFormat": "grpc server =\u003e {{server_addr}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"4\\\\d{2}\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
+               "legendFormat": "http server 4xx =\u003e {{server_addr}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"5\\\\d{2}\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_http_server_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
+               "legendFormat": "http server 5xx =\u003e {{server_addr}}"
+            }
+         ],
+         "title": "Входящий error rate",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 0,
+            "y": 18
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status!=\"OK\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_grpc_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "grpc client =\u003e {{target_host}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"4\\\\d{2}\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "http client 4xx =\u003e {{target_host}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=~\"5\\\\d{2}\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_http_client_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "http client 5xx =\u003e {{target_host}}"
+            },
+            {
+               "expr": "sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=\"err\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_redis_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "redis =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящий error rate",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 6,
+            "y": 18
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=\"err\"}[$__rate_interval])) by (server_addr) or vector(0)/ sum(rate(buttoners_queue_reader_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (server_addr)",
+               "legendFormat": "queue reader =\u003e {{server_addr}}"
+            }
+         ],
+         "title": "Входящий error rate очередей",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 12,
+            "y": 18
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "custom": {}
+            },
+            "overrides": []
+         }
+      },
+      {
+         "type": "timeseries",
+         "targets": [
+            {
+               "expr": "sum(rate(buttoners_queue_writer_handle_seconds_count{service=~\"$service\", pod=~\"$pod\", status=\"err\"}[$__rate_interval])) by (target_host) or vector(0)/ sum(rate(buttoners_queue_writer_handle_seconds_count{service=~\"$service\", pod=~\"$pod\"}[$__rate_interval])) by (target_host)",
+               "legendFormat": "queue writer =\u003e {{target_host}}"
+            }
+         ],
+         "title": "Исходящий error rate очередей",
+         "transparent": false,
+         "datasource": {
+            "type": "prometheus",
+            "uid": "${metrics}"
+         },
+         "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 18,
+            "y": 18
+         },
+         "repeatDirection": "h",
+         "options": {
+            "legend": {
+               "displayMode": "table",
+               "placement": "bottom",
+               "showLegend": true,
+               "sortBy": "Mean",
+               "sortDesc": true,
+               "calcs": [
+                  "mean",
+                  "lastNotNull"
+               ]
+            },
+            "tooltip": {
+               "mode": "",
+               "sort": ""
+            }
+         },
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit",
+               "custom": {}
+            },
+            "overrides": []
+         }
       }
    ],
    "templating": {
